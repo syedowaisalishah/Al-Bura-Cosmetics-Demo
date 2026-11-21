@@ -1,0 +1,14 @@
+[
+  { "id": "demo-01", "code": "D1.0", "name": "Soft Black", "family": "natural", "hex": "#1C1818", "level": 1, "reflection": "Neutral", "illustrative": true },
+  { "id": "demo-02", "code": "D2.0", "name": "Espresso", "family": "natural", "hex": "#30231F", "level": 2, "reflection": "Neutral", "illustrative": true },
+  { "id": "demo-03", "code": "D4.0", "name": "Chestnut", "family": "natural", "hex": "#54372F", "level": 4, "reflection": "Neutral", "illustrative": true },
+  { "id": "demo-04", "code": "D5.0", "name": "Cocoa Brown", "family": "natural", "hex": "#765144", "level": 5, "reflection": "Neutral", "illustrative": true },
+  { "id": "demo-05", "code": "D6.0", "name": "Dark Blonde", "family": "natural", "hex": "#927253", "level": 6, "reflection": "Neutral", "illustrative": true },
+  { "id": "demo-06", "code": "D7.3", "name": "Honey Blonde", "family": "gold", "hex": "#B58A58", "level": 7, "reflection": "Golden", "illustrative": true },
+  { "id": "demo-07", "code": "D8.3", "name": "Golden Blonde", "family": "gold", "hex": "#CBA56A", "level": 8, "reflection": "Golden", "illustrative": true },
+  { "id": "demo-08", "code": "D9.1", "name": "Ash Blonde", "family": "ash", "hex": "#D8C5A4", "level": 9, "reflection": "Ash", "illustrative": true },
+  { "id": "demo-09", "code": "D6.4", "name": "Warm Copper", "family": "copper", "hex": "#B0633D", "level": 6, "reflection": "Copper", "illustrative": true },
+  { "id": "demo-10", "code": "D5.6", "name": "Burgundy", "family": "red", "hex": "#763747", "level": 5, "reflection": "Red", "illustrative": true },
+  { "id": "demo-11", "code": "D4.2", "name": "Smoky Violet", "family": "violet", "hex": "#51404F", "level": 4, "reflection": "Violet", "illustrative": true },
+  { "id": "demo-12", "code": "D10.0", "name": "Pearl Blonde", "family": "natural", "hex": "#E6D7B9", "level": 10, "reflection": "Neutral", "illustrative": true }
+]

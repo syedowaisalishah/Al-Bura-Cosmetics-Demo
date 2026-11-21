@@ -1,0 +1,44 @@
+{
+  "name": "albura-ai-demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "predev": "npm run assets:sync",
+    "build": "next build",
+    "prebuild": "npm run assets:sync && npm run model:verify",
+    "start": "tsx scripts/serve-static.ts",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen && tsc --noEmit",
+    "assets:sync": "tsx scripts/sync-mediapipe-assets.ts",
+    "model:download": "tsx scripts/download-hair-model.ts",
+    "model:verify": "tsx scripts/verify-hair-model.ts",
+    "postinstall": "npm run assets:sync"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.2.3",
+    "clsx": "2.1.1",
+    "lucide-react": "1.77.0",
+    "next": "16.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwind-merge": "3.7.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "typescript": "^5"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0",
+    "npm": ">=9"
+  }
+}
