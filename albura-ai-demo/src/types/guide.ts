@@ -1,18 +1,36 @@
 import type { Shade } from "@/types/shade";
 
-/** Values are user supplied. Segmentation must never infer hair history. */
+export type HairHistory = "virgin" | "previously-coloured" | "previously-bleached";
+export type GreyPercentage = "none" | "below-50" | "above-50";
+export type HairLength = "short" | "shoulder" | "long" | "extra-long";
+export type HairDensity = "fine" | "medium" | "thick";
+
+/** Manual inputs only. Neither hair level nor history is inferred from a photo. */
 export interface GuideInput {
-  currentLevel: number;
-  targetShade: Shade;
-  hairHistory: "natural" | "previously-coloured" | "unknown";
-  greyCoverage: "none" | "some" | "mostly" | "unknown";
+  selectedShade: Shade;
+  naturalLevel: number;
+  hairHistory: HairHistory;
+  greyPercentage: GreyPercentage;
+  hairLength: HairLength;
+  hairDensity: HairDensity;
 }
 
-/** No formula or developer strength is approved or calculated in Phase 1. */
+export type GuideClassification =
+  | "Professional consultation required"
+  | "Deposit/darken assessment"
+  | "Moderate lift assessment"
+  | "Significant lift assessment; professional review"
+  | "Pre-lightening assessment required"
+  | "Multi-session professional assessment";
+
+/** Educational workflow classification; never an approved chemical formulation. */
 export interface GuideResult {
-  status: "unavailable" | "review-required" | "ready";
-  summary: string;
-  considerations: string[];
+  classification: GuideClassification;
+  naturalLevel: number;
+  targetLevel: number;
+  liftDifference: number;
+  selectedShade: Shade;
+  reflection: string;
   warnings: string[];
-  rulesVersion: string | null;
+  approvalStatus: "demo_unapproved";
 }

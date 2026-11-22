@@ -1,48 +1,49 @@
-# Phase boundaries and implementation plan
+# Delivery boundaries
 
-## Phase 1 — this delivery
+Phases 1–5 are implemented locally. See `PHASE_5_REPORT.md` for the final audit
+and checks. `CAMERA_CAPTURE_REPORT.md` describes the capture workflow and
+`PHASE_3_REPORT.md` describes the guide. `PHASE_2_REPORT.md` preserves photo-pipeline
+evidence and `VERIFICATION.md` is the historical Phase 1 snapshot.
 
-- Environment checked; Next.js application created with create-next-app.
-- Requested packages installed with lockfile; no paid SDKs or backend services.
-- Official HairSegmenter downloaded, pinned, and structurally verified.
-- Browser-only CPU WASM model factory configured but not called by the UI.
-- Strict types, Zod-validated illustrative shade data, modular two-window shell.
-- Setup, architecture, provenance, commands, and verification documented.
+## Completed
 
-**Stop here. Phase 2 requires a new user instruction.** No segmentation inference,
-recolouring, working camera, upload workflow, shade selection, before/after
-interaction, or guide calculations are implemented. Placeholder controls are
-disabled and described as coming later.
+- Phase 1: Next.js/TypeScript architecture, verified official models, theme and
+  modular extension points.
+- Phase 2: local photo upload, real CPU browser-worker segmentation, conservative
+  masking and texture-preserving CIELAB recolouring, twelve illustrative shades,
+  comparison, PNG download, errors/retry and resource cleanup.
+- Phase 3: shared React Context, manual hair level/history/grey/length/density,
+  deterministic demo lift categories, shade synchronization, educational pigment
+  chart, review timeline, safety/approval locks, mobile tabs and browser print.
 
-## Proposed Phase 2 — not started
+- Camera workflow revision: replace Phase 4 continuous VIDEO inference with
+  normal camera preview and on-demand PNG capture. Reuse the IMAGE worker and
+  photo cache for all AI processing; retain palette, guide, comparison and PNG
+  download. Retake/Stop/mirroring and late-permission cleanup are implemented.
 
-1. Validate JPEG/PNG/WebP files and image dimensions; provide local previews and
-   release object URLs. Establish a bounded image size and error states.
-2. Connect the explicit model factory from a client component or hook. Run
-   IMAGE-mode inference, check labels, copy hair probabilities, and close masks.
-   Compare several diverse single-person selfies; never infer hair history.
-3. Implement Canvas 2D recolouring with retained luminance/texture and feathered
-   hair boundaries. Keep original pixels outside the mask unchanged. Explain
-   that virtual dark-to-light effects do not predict actual chemical lift.
-4. Connect palette selection and before/after comparison with keyboard access.
-5. Add user-supplied hair level/history. Implement educational guide logic only
-   after receiving the scope PDF and approved rules. Never invent a formula.
-6. Add optional camera capture only if the demo time budget permits; request
-   camera permission on an explicit action, use HTTPS/localhost, and stop tracks.
-7. Check memory, CPU latency, image privacy, mobile layout, difficult hair
-   boundaries, and supported browsers; then deploy the functioning demo.
+- Phase 5: bounded upper-tone lightness anchor, reflection/chroma protection,
+  active hair pixel cache, native mask-shape validation, shade search/family
+  filters, comparison views/reset, responsive UI refinements, demonstration and
+  limitation docs, and Vercel static-export preparation. Deployment awaits an
+  eligible account/credentials; no deployed URL or production readiness is claimed.
 
-## Suggested remaining time allocation
+Guide input changes neither rerun segmentation nor change the processed image.
+Changing shade recolours from the existing cache without another model analysis.
 
-The total project target is 5–6 hours. Keep the scope small: about 30 minutes for
-upload/state, 45–60 for inference/masks, 60–90 for recolouring/comparison, 30–45 for
-approved guide integration, and 30–45 for QA/deployment. These are estimates,
-not time already spent. Defer camera, GPU tuning, and production services if needed.
+## Brand approval work — pending approved inputs
 
-## Inputs needed before brand fidelity
+Obtain the missing scope PDF, reconcile the visual references, import an approved
+shade card/Lab values, and obtain brand-approved technical rules. All developer
+strengths, chemical quantities, ratios, timings and bleach instructions remain
+locked. No generic defaults may become approved instructions automatically.
 
-- Missing scope PDF and its sample shade values.
-- Brand-approved shade card, Lab values where available, technical rules and
-  product instructions. Replace the twelve provisional demo shades deliberately.
-- Real-world segmentation and recolouring acceptance criteria and example photos
-  supplied with permission for local testing.
+## Further validation — pending a concrete brief
+
+Physical desktop/mobile camera validation, broader annotated-mask evaluation,
+real-device Safari/Firefox testing, performance
+and accessibility work, brand review, and recovery of the existing hosting
+connection before publication. These remain suggestions for future work.
+
+Admin, database, authentication, GPU rendering and production
+inference services remain outside the current delivery. Maintain the $0
+browser-only path and photo privacy. Virtual colour cannot predict dye outcomes.

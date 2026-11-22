@@ -1,87 +1,133 @@
-# Local setup
+# Local setup and configuration
 
-Checked on **2026-11-22**, Asia/Karachi. See `VERIFICATION.md` for final results.
+Verified on 2026-11-22 (Asia/Karachi): Ubuntu 26.04 LTS, Node 22.22.1, npm 9.2.0,
+Git 2.53.0, Chrome 151. Next.js 16.4.6, React 19.3.0, TypeScript 5.9.3,
+Tailwind 4.3.3 and MediaPipe Tasks Vision 1.2.3 are locked in `package-lock.json`.
+The local `tsx` runner handles TypeScript utilities because the installed Node
+binary lacks native TypeScript support. No sudo/system changes are required.
 
-## Environment
-
-- Ubuntu 26.04 LTS, Linux x86_64.
-- Node.js **22.22.1**, npm **9.2.0**, Git **2.53.0**.
-- Next.js **16.4.6**, React/React DOM **19.3.0**, TypeScript **5.9.3**,
-  Tailwind CSS **4.3.3**. Additional exact versions are in `package-lock.json`.
-- `.nvmrc` pins the verified Node version. A small `tsx` development dependency
-  runs TypeScript utilities because this machine's Node binary was compiled
-  without native TypeScript support. No system configuration changes were needed.
-
-This Node version exceeds the [Next.js minimum of Node 20.9](https://nextjs.org/docs/app/getting-started/installation).
-MediaPipe runs in a modern browser with WebAssembly and Canvas 2D, not in Node or
-SSR. Start browser testing in current Chrome/Edge; test other browsers before
-claiming support. Camera support is deferred and will require HTTPS or localhost.
-
-## First run
-
-From the repository root:
+## Start
 
 ```bash
 cd albura-ai-demo
 npm ci
-npm run model:verify
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000` and `http://127.0.0.1:3000/try-on/`.
-No `.env` values, API keys, cloud services, or account setup are required locally.
-Fonts use the system stack, so builds do not download webfonts.
+Open http://127.0.0.1:3000/try-on/. Select a JPG/JPEG/PNG/WebP portrait, then
+choose a sample shade. Wait until the preview is ready before downloading PNG.
+Photos stay on the device. File limit is 15 MB; image processing is limited to
+1024 px on the longest side, retaining aspect ratio and browser-decoded orientation.
+Use a current Chrome/Edge browser with workers, WebAssembly and Canvas 2D.
+Other browsers require their own validation; the app reports unsupported features.
 
-`npm ci` regenerates WASM assets via `postinstall`; `predev` and `prebuild` also
-sync them. If install lifecycle scripts are disabled, run `npm run assets:sync`.
-The generated runtime is ignored by Git and is included in the static build.
+## Take a photo
 
-## Required checks and production preview
+In Window 1 select **Take Photo**, then **Open Camera** and allow permission.
+The camera shows normal video; no model loads or AI analysis run while framing.
+Use localhost or HTTPS; an ordinary HTTP LAN address cannot open the camera.
+The stream prefers the front camera with `playsInline` for mobile browsers.
+
+**Capture Photo** freezes the frame, stops every camera track and passes a local
+PNG File to the exact same `processPhoto` function as Upload Photo. Both run the
+existing IMAGE segmentation once per photo and cache the mask/colour data.
+Change shades without another inference; compare before/after, select **Change
+Shade**, and use **Download Result** to save the processed PNG.
+
+**Mirror selfie** defaults on: mirroring is baked into the captured pixels so
+preview, original, recoloured result and download have the same orientation.
+Uncheck it before capture for a normal camera orientation. **Retake** reopens the
+camera; the previous result clears only after the new preview opens successfully.
+**Stop Camera**, switching away, hiding the page or leaving the route releases
+tracks. Captured files stay local, and result URLs revoke on reset/replacement
+or route teardown. Camera failures leave Upload Photo available.
+
+Mobile browsers require permission and a secure origin. Physical mobile devices,
+Safari and Firefox still need their own verification. See
+[the current report](CAMERA_CAPTURE_REPORT.md) for the tested environment.
+
+## Real `.env`
+
+This workspace contains **`albura-ai-demo/.env`**, mode 600, ignored by Git.
+There is no `.env.example`. Next.js loads `.env` automatically. For a fresh clone,
+create the local file yourself if overriding defaults:
+
+```dotenv
+# Public asset configuration, NOT secrets.
+NEXT_PUBLIC_HAIR_MODEL_PATH=/models/hair_segmenter.tflite
+NEXT_PUBLIC_HAIR_GUARD_MODEL_PATH=/models/selfie_multiclass_256x256.tflite
+NEXT_PUBLIC_VISION_WASM_PATH=/wasm
+NEXT_PUBLIC_ENABLE_MASK_DEBUG=true
+```
+
+No secret credentials are required by this client-only application. Keep future
+real secrets in `.env` without the `NEXT_PUBLIC_` prefix; never copy them into
+`public` or expose them to the browser. Public values are embedded during build:
+restart development/rebuild when changing them. The mask toggle appears only
+in development with the debug flag enabled; it is absent from production builds.
+Do not commit `.env`. Defaults support ordinary local and hosted builds without it.
+
+## Commands
 
 ```bash
+npm test
 npm run typecheck
 npm run lint
-npm run build
+npm run model:verify
+npm run deploy:check
 npm start
 ```
 
-`typecheck` generates Next.js route types, then runs `tsc --noEmit`. Lint runs
-ESLint separately, because Next.js does not automatically lint during builds.
-Build first syncs runtime assets and verifies the model, then produces `out/`.
-`npm start` serves the actual static output at `http://127.0.0.1:3000`; choose
-another port with `PORT=3001 npm start` on Linux/macOS. Stop servers with Ctrl+C.
+`npm start` serves the static `out/` export locally; `PORT=3001 npm start` selects
+another port. `npm run dev` starts Next.js development mode. Stop with Ctrl+C.
+Type checking regenerates route types before `tsc --noEmit`; lint runs separately.
 
-## Official model
+`npm ci` runs the asset sync through postinstall. `predev` and `prebuild` also
+regenerate matching WASM files and the browser worker. If lifecycle scripts are
+disabled, run `npm run assets:sync` explicitly. esbuild is a development-time
+worker bundler; it adds no server or paid runtime dependency.
 
-The real Google float32 v1 HairSegmenter is checked into `public/models`.
-Run `npm run model:download` to restore it if absent or corrupted. Downloading
-requires internet; build and verification use the included file. Downloads fail
-explicitly on HTTP, content, checksum, structure, or label errors. No dummy model
-is substituted. See `public/models/README.md` for license, checksum and semantics.
+## Models and performance
 
-The model factory in `src/lib/ai/mediapipe.ts` is ready for a future browser
-component to call. The Phase 1 UI never calls it. It uses local `/wasm` and
-`/models/hair_segmenter.tflite`, CPU delegation, and IMAGE mode. It checks exact
-labels before returning a handle. Close the handle after use. Initialization
-does not perform segmentation; no inference workflow is delivered in Phase 1.
+The official hair-only float32 v1 model and official selfie-multiclass 256 model
+are included in `public/models`. `npm run model:verify` checks both exact hashes,
+TFLite structure, float32 types, tensor shapes and embedded labels. Restore both
+using `npm run model:download`; invalid downloads fail without fake substitutes.
 
-## Free static hosting
+The second AI model protects against observed hair-only background errors. Both
+load once per session and run in a local CPU worker for each new photo. Changing
+shade only recolours the cached image/mask. Camera captures use that same IMAGE
+worker and pipeline. There is no VIDEO segmenter, frame inference loop, adaptive
+resolution policy or temporal mask. Inference, masking and colour quality
+remain affected by fine edges, lighting, occlusion and backgrounds. No model can
+guarantee pixel-perfect hair boundaries or real-world dye outcomes.
 
-The export is compatible with static hosting, without a Node backend. A documented
-free option is [Cloudflare Pages](https://developers.cloudflare.com/pages/framework-guides/nextjs/deploy-a-static-nextjs-site/):
-use `albura-ai-demo` as the project root, `npm run build` as the build command,
-`out` as the output directory, and Node `22.22.1`. Check current free-plan limits
-before publishing. No deployment CLI, paid account, database, or billing service
-has been added to the project. A Sites deployment can also serve the same output.
+## Static hosting
 
-Serve from the domain root so the model/WASM absolute paths resolve. Subpath
-hosting (for example a GitHub project page) requires a consistent Next `basePath`
-and corresponding asset URL changes before deployment. Do not put photos in
-`public/` or commit user images.
+Build command: `npm run build`; application root: `albura-ai-demo`; output: `out`;
+Node: 22.22.1. Sites identity/static directory is in `.openai/hosting.json`.
+[Cloudflare Pages also supports Next.js static exports](https://developers.cloudflare.com/pages/framework-guides/nextjs/deploy-a-static-nextjs-site/).
+Check current free-plan limits before publication. No paid API or cloud inference
+service is needed. Serve from the domain root so `/models`, `/wasm` and `/workers`
+resolve; subpath hosting requires corresponding URL/basePath changes.
 
-## Known missing inputs
+The shade palette provides name/code/HEX/level/reflection search and family
+filters. Clearing filters restores all twelve samples without resetting selection.
+Use Original / Compare / Colour preview beside the range control.
 
-There was no scope PDF in the repository. The twelve shade values and D-prefixed
-codes are illustrative placeholders, not an approved Al Bura shade card. Brand
-technical rules remain absent. These do not block Phase 1; they block claims of
-brand fidelity and approved technical recommendations in later phases.
+Window 2 provides a synchronized educational demo guide: choose natural
+level manually, change history/grey/length/density, and review the derived
+classification. On mobile, switch between the two tabs without losing the photo.
+The Print demo guide action uses browser printing and excludes the portrait.
+All chemical outputs remain locked and every assessment is unapproved.
+
+No photo fixtures or local `.env` files should be packaged for publication. The
+scope PDF and approved Al Bura shade/technical rules remain missing inputs for
+future brand fidelity; they do not block the illustrative photo try-on.
+
+For the current Vercel static-export settings and deployment status, follow
+[README deployment](../README.md#deploy-to-vercel). No paid infrastructure is enabled.
+
+Vercel installation uses `npm ci --include=dev` so tsx, esbuild and TypeScript
+are available during build. `npm run build` invokes a postbuild export check;
+`npm run deploy:verify` can rerun that check against an existing `out/`.

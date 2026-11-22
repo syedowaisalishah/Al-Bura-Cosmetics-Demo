@@ -1,0 +1,14 @@
+.env*
+.vercel
+.next
+out
+coverage
+docs
+tests
+*.log
+.openai
+*.tsbuildinfo
+node_modules
+.git
+public/workers
+public/wasm

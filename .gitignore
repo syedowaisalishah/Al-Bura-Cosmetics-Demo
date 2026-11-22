@@ -1,0 +1,3 @@
+# Keep private local settings out of this repository, including at the repo root.
+.env*
+.vercel/

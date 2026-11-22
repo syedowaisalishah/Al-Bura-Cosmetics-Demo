@@ -1,15 +1,17 @@
-/** Plain owned data; Phase 2 must copy masks before closing MediaPipe results. */
+/** Owned mask copies; no native MediaPipe resources escape the worker. */
 export interface HairSegmentationResult {
   width: number;
   height: number;
   /** Row-major class indices: 0 = background, 1 = hair. */
   categoryMask: Uint8Array;
-  /** Row-major hair probabilities in [0, 1], from confidenceMasks[1]. */
+  /** Hair evidence in [0, 1]; strong agreement plus connected, supported strand recovery. */
   hairConfidenceMask: Float32Array;
+  /** Internal multiclass skin exclusion; removed before the worker response. */
+  skinConfidenceMask?: Float32Array;
   processingTimeMs: number;
 }
 
-export type TryOnStatus = "idle" | "loading-model" | "processing" | "ready" | "error";
+export type TryOnStatus = "idle" | "decoding" | "loading-model" | "processing" | "refining" | "rendering" | "ready" | "error";
 
 export interface TryOnState {
   status: TryOnStatus;

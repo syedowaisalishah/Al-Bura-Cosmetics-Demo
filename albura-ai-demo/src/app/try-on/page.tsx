@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { HairTryOn } from "@/components/try-on/HairTryOn";
-import { ShadePalette } from "@/components/try-on/ShadePalette";
-import { TechnicalGuide } from "@/components/guide/TechnicalGuide";
+import { TryOnProvider } from "@/components/try-on/TryOnProvider";
+import { TryOnStudio } from "@/components/try-on/TryOnStudio";
 import { demoShades } from "@/data/shades";
 
 export const metadata: Metadata = { title: "Try-On Studio" };
@@ -9,10 +8,9 @@ export const metadata: Metadata = { title: "Try-On Studio" };
 export default function TryOnPage() {
   return (
     <main id="main-content" className="container studio-page">
-      <div className="studio-page-heading"><div><p className="eyebrow">YOUR NEXT COLOUR STARTS HERE</p><h1>The colour studio</h1><p>Imagine the change. Explore the possibilities.</p></div><span className="quiet-tag">Phase 1 · Preview shell</span></div>
-      <div className="phase-notice" role="note"><strong>A first look at the studio.</strong> Photo upload, AI previews, shade selection, and technical guidance are coming in the next phases.</div>
-      <div className="studio-windows"><HairTryOn /><TechnicalGuide /></div>
-      <ShadePalette shades={demoShades} />
+      <div className="studio-page-heading"><div><p className="eyebrow">YOUR NEXT COLOUR STARTS HERE</p><h1>The colour studio</h1><p>Upload a portrait or open your camera. Explore your next shade.</p></div><span className="quiet-tag">Photo & camera capture</span></div>
+      <div className="phase-notice" role="note"><strong>Your photos and video stay with you.</strong> AI previews run on your device. The synchronized technical guide is an unapproved educational demonstration.</div>
+      <TryOnProvider shades={demoShades}><TryOnStudio /></TryOnProvider>
     </main>
   );
 }

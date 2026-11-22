@@ -13,7 +13,11 @@
     "assets:sync": "tsx scripts/sync-mediapipe-assets.ts",
     "model:download": "tsx scripts/download-hair-model.ts",
     "model:verify": "tsx scripts/verify-hair-model.ts",
-    "postinstall": "npm run assets:sync"
+    "postinstall": "npm run assets:sync",
+    "test": "tsx --test tests/*.test.ts",
+    "postbuild": "npm run deploy:verify",
+    "deploy:verify": "tsx scripts/verify-deployment.ts",
+    "deploy:check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "1.2.3",
@@ -34,11 +38,12 @@
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "esbuild": "0.28.2"
   },
   "type": "module",
   "engines": {
-    "node": ">=22.18.0",
+    "node": "22.x",
     "npm": ">=9"
   }
 }

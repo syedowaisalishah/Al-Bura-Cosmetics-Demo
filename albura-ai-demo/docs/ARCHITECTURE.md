@@ -1,119 +1,136 @@
-# Phase 1 architecture
+# Application architecture
 
-One Next.js App Router application, React, strict TypeScript, Tailwind CSS, and
-native browser APIs. No backend, database, paid AI API, image-upload endpoint, or
-separate inference service is needed for this demo.
+One Next.js App Router app with React, strict TypeScript and Tailwind CSS. The
+browser reads an uploaded or camera-captured photo, runs MediaPipe CPU models,
+recolours using Canvas 2D, compares before/after and downloads a PNG. Camera
+preview is normal video with no AI processing. No image-upload API, cloud inference,
+database or paid services are involved.
 
-## Two-window experience
+## Two windows and shared shade data
 
-- **Window 1 — virtual try-on:** portrait upload, future browser segmentation,
-  Canvas recolouring, and before/after preview.
-- **Window 2 — technical guide:** current hair level, target shade, and future
-  brand-approved colour guidance.
-- **Shared palette:** a single validated shade JSON source will feed both windows.
-
-The repository had no project scope PDF on 2026-11-22. This scaffold follows the
-two-window requirements in the supplied request. Shade values, codes, and names
-are provisional illustrative content, **not** scope-derived or brand-approved.
-No brand formula, mixing ratio, developer strength, lift rule, or application time
-has been invented.
-
-## Intended browser pipeline — Phase 2
+Window 1 provides Upload Photo and Take Photo tabs. Window 2 is the synchronized educational
+technical guide with manual inputs, demo classifications, references, safety
+locks and browser printing. Chemical formulations remain unimplemented.
+`demo-shades.json` is the shared source of twelve illustrative shades, validated
+with Zod. Neither its codes nor values are officially approved Al Bura colours.
+No project scope PDF was present in the repository.
 
 ```mermaid
 flowchart LR
-  subgraph Browser[Browser: all image processing stays here]
-    UI[Next.js UI: Window 1] --> Seg[MediaPipe hair segmentation]
-    Seg --> Canvas[Native Canvas 2D recolouring engine]
-    Canvas --> Preview[Before/After preview]
-    Palette[Shade palette] --> Canvas
-    Palette --> Guide[Technical guide: Window 2]
-    Level[User supplied hair level and history] --> Guide
+  subgraph Browser[Browser only]
+    Upload[Next.js upload UI] --> Decode[Orientation-aware decode and 1024 px limit]
+    Decode --> Worker[MediaPipe CPU worker]
+    Worker --> Hair[Official hair confidence]
+    Worker --> Guard[Official multiclass hair and skin masks]
+    Hair --> Mask[Agreement, skin exclusion, alignment and feathering]
+    Guard --> Mask
+    Decode --> Cache[Original pixels and CIELAB cache]
+    Mask --> Cache
+    Cache --> Canvas[Canvas recolouring]
+    Canvas --> Compare[Before/After preview]
+    Canvas --> PNG[Processed PNG download]
+    State[React Context: selected shade and manual inputs] --> Palette[Shade palette]
+    State --> Canvas
+    Camera[getUserMedia normal video] --> Capture[Freeze and mirror frame on Capture Photo]
+    Capture --> Stop[Stop all camera tracks]
+    Stop --> File[Local PNG File]
+    File --> Decode
+    State --> Rules[Deterministic unapproved demo rules]
+    Rules --> Guide[Window 2 guide]
+    Guide --> Print[Print assessment and safety limits]
   end
   JSON[Shade JSON] --> Palette
-  JSON --> Canvas
-  JSON --> Guide
+  JSON --> State
 ```
 
-The arrows describe future integration, not implemented Phase 1 behaviour. All
-current components are static shells. No photo is read, camera accessed, model
-initialized, inference performed, pixel changed, or technical rule calculated by
-the application UI. The server/build renders the shell and validates JSON only.
+## Module responsibilities
 
-## Boundaries
+- `src/app`: routes, branding, responsive theme and metadata. Server components
+  emit the shell; a deep `TryOnProvider` boundary shares studio state.
+  `guide.css` styles the guide, mobile tabs and print view; `camera.css` styles
+  capture. `studio.css` adds final spacing, responsive controls, bounded previews,
+  search/filter UI and first-time instructions.
+- `components/try-on/TryOnProvider.tsx`: selected shade and manual guide inputs.
+  Target level, lift difference and guide result are derived, avoiding duplicate
+  state. Shade identity stays stable across guide-only updates.
+- `components/try-on/TryOnStudio.tsx`: desktop panels, keyboard-accessible mobile
+  tabs and shared palette. Photo/guide state stays mounted across tab switches;
+  the camera unmounts when its pane is hidden on mobile.
+- Other `components/try-on`: upload/replace/reset, status, error/retry, comparison
+  and PNG download. The colour effect depends only on selected shade and image
+  cache version; guide changes do not rerun recolouring or MediaPipe.
+- `components/try-on/HairTryOn.tsx`: one `processPhoto(file, source)` entry for
+  file picker and camera capture. It owns the original, refined mask, Lab cache,
+  recolour effect, cancellation, shared comparison, downloads and object URLs.
+- `components/try-on/CameraPreview.tsx`: explicit permission, normal video,
+  Open/Capture/Retake/Stop, mirror preference and safe stream lifecycle. It
+  receives a capture callback and never imports or initializes MediaPipe.
+- `lib/camera.ts`: permission/error messages, every-track cleanup and synchronous
+  frame freezing/mirroring followed by PNG File encoding. Capture limits the
+  longest dimension to the existing 1024 px processing limit.
+- `lib/ai/mediapipe.ts`: one reusable IMAGE worker, typed responses, timeouts and
+  cleanup. Factories dynamically import the official SDK in the browser/worker.
+- `lib/ai/segmentation.worker.ts`: IMAGE inference with both existing verified
+  models. Strong agreement anchors connected strand recovery when one model
+  is uncertain but both provide hair evidence. Conservative skin exclusion
+  blocks recovery across face/body boundaries. It returns owned mask arrays and closes
+  incoming bitmaps in `finally`. There is no video request protocol.
+- `lib/ai/hair-segmentation.ts`: verified output extraction. Native result buffers
+  are copied before `result.close()`; transferred ImageBitmaps close in `finally`.
+- `lib/ai/mask-utils.ts`: bilinear pixel-centre resizing, confidence threshold,
+  connected tiny-region removal, bounded inward feathering, skin exclusion and
+  development overlay. No hand-painted mask or fixed head template is used.
+- `lib/ai/hair-recolor.ts`: cache active hair indices, compact Lab values,
+  weighted mean and a bounded upper-tone histogram anchor once per photo.
+  Shade changes visit those indices rather than converting the full image again.
+  Monotonic bounded lightness, source chroma detail, a saturation cap, highlight
+  protection and hue-preserving sRGB gamut fitting reduce flat/tinted reflections.
+  Zero-mask pixels retain their exact original RGBA bytes. Loops yield and use
+  AbortSignal to suppress stale replacements and rapid selections.
+- `lib/ai/photo-utils.ts`: validation, orientation-aware decode, downscale, canvas
+  conversion and object URL creation. URLs, bitmaps, caches and workers are
+  released on replace/reset or route teardown as appropriate.
+- `lib/color`: sRGB/D65 XYZ/CIELAB math, chroma-only gamut fitting and pure
+  shade search/family filtering. `ShadePalette` stores only its local filter state;
+  filtering never mutates the selected Context shade.
+- `lib/guide/guide-rules.ts`: pure level/history classification, input validation,
+  warnings and a fixed `demo_unapproved` status; no formulation values.
+- `lib/guide/guide-reference.ts`: illustrative level/pigment values, manual input
+  options, notices and locked categories sourced from the supplied brief.
+- `components/guide`: controlled level/history inputs, synchronized shade summary,
+  lift assessment, educational chart, review pathway, approval locks and print UI.
+- `public/models`: original official binaries, checksums, licenses/model cards.
+- `public/wasm`, `public/workers`: generated local runtime assets, ignored by Git.
+  `scripts/sync-mediapipe-assets.ts` copies locked SDK files and bundles the
+  TypeScript worker with esbuild on install and before dev/build.
+- `tests/vision.test.ts`: meaningful pure-math, mask, cancellation and pixel
+  preservation checks. `tests/guide.test.ts` covers the demo rule boundaries and
+  all 300 level/history combinations. `tests/camera.test.ts` verifies camera
+  errors, cleanup, unready-frame rejection and IMAGE result buffer ownership.
+  `tests/shades.test.ts` verifies metadata/filtering. See `PHASE_5_REPORT.md`
+  for current browser and real-photo evidence.
 
-```text
-albura-ai-demo/
-  src/
-    app/
-      page.tsx, layout.tsx, globals.css, icon.svg
-      try-on/page.tsx
-    components/
-      layout/Header.tsx, Footer.tsx
-      try-on/PhotoUploader.tsx, HairTryOn.tsx, BeforeAfterSlider.tsx,
-             ShadePalette.tsx, CameraPreview.tsx
-      guide/TechnicalGuide.tsx, HairLevelSelector.tsx, SafetyWarnings.tsx
-      ui/Button.tsx, Card.tsx
-    lib/
-      ai/mediapipe.ts, hair-segmentation.ts, hair-recolor.ts, mask-utils.ts
-      color/color-utils.ts
-      guide/guide-rules.ts
-      utils.ts
-    data/demo-shades.json, shades.ts
-    types/shade.ts, try-on.ts, guide.ts
-  public/
-    models/hair_segmenter.tflite, hair-model-card.pdf, LICENSE-2.0.txt, README.md
-    wasm/                         generated runtime, ignored by Git
-    images/                       reserved for approved assets
-  scripts/                        TypeScript setup and verification utilities
-  docs/ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, SETUP.md, VERIFICATION.md
-  .openai/hosting.json             static Sites hosting identity
-  .nvmrc, .env.example, package.json, package-lock.json
-  next.config.ts, tsconfig.json, eslint.config.mjs
-```
+## Configuration, privacy and deployment
 
-| Location | Responsibility / Phase 2 extension point |
-| --- | --- |
-| `src/app` | `/` overview, `/try-on/` studio, shared layout, theme |
-| `components/layout`, `components/ui` | Accessible navigation and reusable primitives |
-| `components/try-on` | Upload, camera, preview, comparison, and palette shells |
-| `components/guide` | Guide, current-level selector, and warning shells |
-| `lib/ai/mediapipe.ts` | Explicit browser-only factory; CPU WASM, IMAGE mode, no inference |
-| `lib/ai/hair-segmentation.ts` | Typed inference contract only |
-| `lib/ai/hair-recolor.ts`, `mask-utils.ts` | Canvas/mask contracts and verified category constants |
-| `lib/color` | Colour-space contracts only |
-| `lib/guide` | Guide contract and approval status; no business rules |
-| `data/demo-shades.json`, `data/shades.ts` | Twelve illustrative shades, Zod validation and unique IDs/codes |
-| `types` | Shade, segmentation, try-on state, and guide contracts |
-| `public/models` | Pinned official model, model card, license, and provenance |
-| `public/wasm` | Ignored generated copies of the installed SDK runtime |
-| `scripts` | Runtime asset sync, verified model download/check, local static preview |
+`.env` is a real private local file in the application root. Next.js reads it;
+only the non-secret `NEXT_PUBLIC_` asset paths and development debug flag are
+exposed at build time. No API secret is needed. `.env` is ignored and is never
+copied to `public`, deployment source or a build archive. Sensible asset-path
+defaults also let a clean clone build without missing credentials.
 
-`createHairSegmenter()` rejects server-side calls before dynamically importing the
-SDK. Its type-only SDK import is erased from server JavaScript. The returned
-instance must be owned by a future client component or hook and closed on cleanup.
-There is no auto-loading effect or top-level model initialization. CPU is the
-default; a GPU option and fallback can be added after profiling in Phase 2.
+Static export (`output: "export"`) emits `out/`, including models, WASM and the
+worker. Serve it from the domain root over HTTPS/localhost. Photo uploads and
+processing remain in browser memory; only model/website assets are downloaded.
+`npm start` is a loopback-only export preview, not a production backend.
+`vercel.json` serves the same `out` export with the Other framework preset; see
+the README for root-directory, Node 22.x, build commands and Hobby eligibility.
+No Vercel credentials/project linkage or deployed URL are configured here.
 
-The checked-in model and locally served WASM avoid runtime third-party CDN
-requests. SDK and runtime files come from the same lockfile version. Downloading
-the app/model assets is distinct from uploading a user's image: images will stay
-in browser memory. Phase 2 must copy MediaPipe mask data before closing results,
-release object URLs, enforce image size limits, handle model errors, and stop
-camera tracks on cleanup. Segmentation quality is not a chemical colour outcome.
-
-## Deployment and future production
-
-`output: "export"` emits `out/`, which any static host can serve. No server or
-environment secrets are required. `npm start` uses a small loopback-only local
-static preview; it is not a production service.
-
-A future production version may add Next.js API routes, Prisma + PostgreSQL, an
-admin panel, the complete 180-shade database, brand-approved technical guide rules,
-and an optional FastAPI service for higher-quality rendering. None is installed
-or implemented now. Adding server routes requires replacing static export with
-a suitable Next.js server deployment and explicitly deciding image privacy rules.
+A production project can later introduce Next.js API routes, Prisma/PostgreSQL,
+an admin panel, a complete 180-shade database, brand-approved guide rules, and an
+optional FastAPI rendering service. None is implemented. Adding server routes
+requires changing the static export deployment and deliberately defining privacy.
 
 Sources: [Next.js static export](https://nextjs.org/docs/app/guides/static-exports),
 [Google ImageSegmenter](https://developers.google.com/edge/mediapipe/solutions/vision/image_segmenter),
-[Google hair model card](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20-%20Hair%20Segmentation.pdf).
+[model provenance](../public/models/README.md).

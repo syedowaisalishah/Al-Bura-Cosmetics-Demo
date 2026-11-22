@@ -1,10 +1,6 @@
 # Al Bura Cosmetics — AI Hair Colour Try-On Demo
 
-Phase 1 application: [albura-ai-demo](albura-ai-demo/README.md).
-
-Published private scaffold: https://albura-ai-demo.mythicclover2.chatgpt.site
-
-Publication verified on 2026-11-22. This preview contains the Phase 1 UI shell only.
+The application lives in [albura-ai-demo](albura-ai-demo/README.md).
 
 ```bash
 cd albura-ai-demo
@@ -12,10 +8,19 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. See the application's [setup guide](albura-ai-demo/docs/SETUP.md),
-[architecture](albura-ai-demo/docs/ARCHITECTURE.md), and
-[implementation plan](albura-ai-demo/docs/IMPLEMENTATION_PLAN.md).
+Open http://127.0.0.1:3000/try-on/. Upload a portrait or capture a camera photo,
+choose one of twelve illustrative shades, compare and download the result, then
+review the synchronized educational guide. All photo processing stays local.
 
-The two-window UI, typed extension points, illustrative shade data, and official
-MediaPipe model are prepared. Functional AI, camera, and technical calculations
-are intentionally deferred until Phase 2.
+- [Installation, checks, build and exact Vercel deployment steps](albura-ai-demo/README.md)
+- [Clean-build deployment readiness](albura-ai-demo/docs/VERCEL_READINESS.md)
+- [Three-minute company demonstration](albura-ai-demo/docs/DEMO_GUIDE.md)
+- [Phase 5 audit and test report](albura-ai-demo/docs/PHASE_5_REPORT.md)
+- [Known limitations and production work](albura-ai-demo/docs/KNOWN_LIMITATIONS.md)
+
+Vercel deployment settings are configured in `albura-ai-demo/vercel.json`.
+Select root **`albura-ai-demo`**, framework **Other**, and output **`out`**.
+No live Vercel deployment is claimed. Hobby eligibility depends on
+personal non-commercial use; no paid services are enabled. The earlier private
+Sites deployment is historical and does not contain these verified local changes.
+A real Git-ignored `.env` is present locally; the demo needs no secret API key.

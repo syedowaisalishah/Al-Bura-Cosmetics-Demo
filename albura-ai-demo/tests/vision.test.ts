@@ -1,0 +1,163 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { hexToRgb, labToRgb, rgbToLab } from "../src/lib/color/color-utils.ts";
+import { combineHairConfidence, refineHairMask, resizeConfidenceMask, skinExclusion } from "../src/lib/ai/mask-utils.ts";
+import { prepareHairColor, recolorHair } from "../src/lib/ai/hair-recolor.ts";
+import { validatePhoto } from "../src/lib/ai/photo-utils.ts";
+import type { Shade } from "../src/types/shade.ts";
+
+// A data-only ImageData polyfill for pure pixel math; browser inference is tested separately.
+class PixelData {
+  data: Uint8ClampedArray; width: number; height: number; colorSpace = "srgb";
+  constructor(data: Uint8ClampedArray, width: number, height: number) { this.data = data; this.width = width; this.height = height; }
+}
+globalThis.ImageData = PixelData as unknown as typeof ImageData;
+const shade: Shade = { id: "test", code: "TEST", name: "Copper", family: "copper", hex: "#B0633D", level: 6, reflection: "Copper", illustrative: true };
+
+test("CIELAB D65 agrees with reference red and round-trips sRGB primaries", () => {
+  const red = rgbToLab({ r: 255, g: 0, b: 0 });
+  assert.ok(Math.abs(red.l - 53.24) < 0.02 && Math.abs(red.a - 80.09) < 0.02 && Math.abs(red.b - 67.2) < 0.02);
+  for (const hex of ["#000000", "#ffffff", "#ff0000", "#00ff00", "#0000ff", "#b0633d"]) {
+    const rgb = hexToRgb(hex), actual = labToRgb(rgbToLab(rgb));
+    for (const c of ["r", "g", "b"] as const) assert.ok(Math.abs(actual[c] - rgb[c]) < 0.01, `${hex} ${c}`);
+  }
+});
+
+test("asymmetric mask resizing aligns pixel centres without axis swaps", () => {
+  const result = resizeConfidenceMask(new Float32Array([0, 1]), 2, 1, 4, 2);
+  assert.deepEqual(Array.from(result), [0, .25, .75, 1, 0, .25, .75, 1]);
+  assert.throws(() => resizeConfidenceMask(new Float32Array(1), 2, 1, 4, 2));
+});
+
+test("refinement removes isolated noise, preserves connected hair and never expands onto background", () => {
+  const p = new Float32Array(400);
+  for (let y = 2; y < 10; y++) for (let x = 3; x < 12; x++) p[y * 20 + x] = .99;
+  p[399] = .99;
+  const result = refineHairMask({ width: 20, height: 20, hairConfidenceMask: p, categoryMask: new Uint8Array(400), processingTimeMs: 0 }, 20, 20, { featherRadiusPx: 1 });
+  assert.equal(result.alpha[399], 0);
+  assert.ok(result.alpha[5 * 20 + 6] > .9);
+  assert.ok(result.alpha[2 * 20 + 3] > 0 && result.alpha[2 * 20 + 3] < 1);
+  for (let i = 0; i < p.length; i++) if (p[i] <= .5) assert.equal(result.alpha[i], 0);
+});
+
+test("skin exclusion protects model-predicted skin and its immediate boundary", () => {
+  const skin = new Float32Array(25); skin[12] = .7;
+  const excluded = skinExclusion(skin, 5, 5);
+  assert.equal(excluded[12], 1); assert.equal(excluded[6], 1); assert.equal(excluded[18], 1);
+  assert.equal(excluded[0], 0); assert.equal(excluded[24], 0);
+  assert.equal(Array.from(excluded).reduce((a, b) => a + b), 9);
+});
+
+test("recolouring preserves every non-hair RGBA byte and retains ordered hair texture", async () => {
+  const source = new ImageData(new Uint8ClampedArray(40 * 4), 40, 1);
+  const alpha = new Float32Array(40);
+  for (let i = 0; i < 40; i++) { const v = 10 + i * 5; source.data.set([v, v, v, i === 39 ? 120 : 255], i * 4); if (i > 3 && i < 36) alpha[i] = 1; }
+  const original = new Uint8ClampedArray(source.data);
+  const cache = await prepareHairColor(source, { width: 40, height: 1, alpha, hairPixels: 32 });
+  const output = await recolorHair({ cache, shade });
+  let previousL = -1, changed = 0;
+  for (let i = 0; i < 40; i++) {
+    const p = i * 4;
+    if (alpha[i] === 0) assert.deepEqual(output.data.slice(p, p + 4), original.slice(p, p + 4));
+    else {
+      const l = rgbToLab({ r: output.data[p], g: output.data[p + 1], b: output.data[p + 2] }).l;
+      assert.ok(l > previousL, "Hair luminance ordering must survive the colour transformation"); previousL = l;
+      if (output.data[p] !== original[p]) changed++;
+    }
+    assert.equal(output.data[p + 3], original[p + 3]);
+  }
+  assert.ok(changed > 20);
+  assert.deepEqual(source.data, original, "Cached original image must stay immutable");
+  assert.deepEqual((await recolorHair({ cache, shade, intensity: 0 })).data, original);
+});
+
+test("pixel pipeline rejects no-hair data and respects cancelled renders", async () => {
+  const source = new ImageData(new Uint8ClampedArray(40 * 4).fill(128), 40, 1);
+  await assert.rejects(prepareHairColor(source, { width: 40, height: 1, alpha: new Float32Array(40), hairPixels: 0 }), /No clear hair/);
+  const alpha = new Float32Array(40).fill(1), cache = await prepareHairColor(source, { width: 40, height: 1, alpha, hairPixels: 40 });
+  const controller = new AbortController(); controller.abort();
+  await assert.rejects(recolorHair({ cache, shade, signal: controller.signal }), { name: "AbortError" });
+});
+
+test("upload rejects unsupported, empty, and oversized files", () => {
+  assert.throws(() => validatePhoto(new File(["x"], "x.gif", { type: "image/gif" })), /JPG/);
+  assert.throws(() => validatePhoto(new File([], "x.png", { type: "image/png" })), /15 MB/);
+  assert.throws(() => validatePhoto(new File([new Uint8Array(15 * 1024 * 1024 + 1)], "x.jpg", { type: "image/jpeg" })), /15 MB/);
+  assert.doesNotThrow(() => validatePhoto(new File(["image"], "portrait.JPEG", { type: "image/jpeg" })));
+});
+
+test("gamut mapping preserves lightness and hue for colours beyond sRGB", async () => {
+  const { gamutMapLabToRgb } = await import("../src/lib/color/color-utils.ts");
+  for (const lab of [{ l: 35, a: 100, b: 70 }, { l: 80, a: -80, b: 90 }, { l: 50, a: 80, b: -100 }]) {
+    const rgb = gamutMapLabToRgb(lab), actual = rgbToLab(rgb);
+    assert.ok(Math.abs(actual.l - lab.l) < .01, "Fitting colour gamut must preserve lightness");
+    const angle = Math.atan2(lab.b, lab.a), actualAngle = Math.atan2(actual.b, actual.a);
+    assert.ok(Math.abs(angle - actualAngle) < .01, "Hue must survive gamut fitting");
+    assert.ok(Math.hypot(actual.a, actual.b) < Math.hypot(lab.a, lab.b));
+    assert.ok(Object.values(rgb).every((c) => c >= 0 && c <= 255));
+  }
+});
+
+test("brown, burgundy, blonde and copper retain shadow/highlight ordering without neon saturation", async () => {
+  const source = new ImageData(new Uint8ClampedArray(100 * 4), 100, 1), alpha = new Float32Array(100).fill(1);
+  for (let i = 0; i < 100; i++) { const grey = 8 + i * 2.4; source.data.set([grey, grey, grey, 255], i * 4); }
+  const cache = await prepareHairColor(source, { width: 100, height: 1, alpha, hairPixels: 100 });
+  for (const hex of ["#765144", "#763747", "#D8C5A4", "#B0633D"]) {
+    const output = await recolorHair({ cache, shade: { ...shade, hex } });
+    let previous = -1;
+    for (let i = 0; i < 100; i++) {
+      const lab = rgbToLab({ r: output.data[i * 4], g: output.data[i * 4 + 1], b: output.data[i * 4 + 2] });
+      assert.ok(lab.l > previous, `${hex}: Strand contrast must remain ordered`); previous = lab.l;
+      assert.ok(Math.hypot(lab.a, lab.b) < 42, `${hex}: Colour must remain bounded`);
+      if (i === 0) assert.ok(lab.l < 12, "Deep shadows must stay dark");
+      if (i === 99) assert.ok(lab.l > 85 && Math.hypot(lab.a, lab.b) < 10, "Specular highlights should stay bright and mostly neutral");
+    }
+  }
+});
+
+test("colour cache processes active hair only and always recolours from the immutable original", async () => {
+  const source = new ImageData(new Uint8ClampedArray(80 * 4).fill(100), 80, 1), alpha = new Float32Array(80);
+  alpha.fill(1, 20, 60);
+  const cache = await prepareHairColor(source, { width: 80, height: 1, alpha, hairPixels: 40 });
+  assert.equal(cache.indices.length, 40); assert.equal(cache.lab.length, 120);
+  const first = await recolorHair({ cache, shade });
+  await recolorHair({ cache, shade: { ...shade, hex: "#763747" } });
+  assert.deepEqual((await recolorHair({ cache, shade })).data, first.data);
+  assert.ok(source.data.every((v) => v === 100));
+});
+
+test("shadow-heavy hair does not force a dark target to brighten diffuse strands excessively", async () => {
+  const source = new ImageData(new Uint8ClampedArray(100 * 4), 100, 1), alpha = new Float32Array(100).fill(1);
+  for (let i = 0; i < 100; i++) { const grey = i < 75 ? 15 : 100; source.data.set([grey, grey, grey, 255], i * 4); }
+  const cache = await prepareHairColor(source, { width: 100, height: 1, alpha, hairPixels: 100 });
+  const out = await recolorHair({ cache, shade: { ...shade, hex: "#763747" } });
+  const original = rgbToLab({ r: 100, g: 100, b: 100 }).l;
+  const rendered = rgbToLab({ r: out.data[99 * 4], g: out.data[99 * 4 + 1], b: out.data[99 * 4 + 2] }).l;
+  assert.ok(rendered <= original + 3, "A dark burgundy should not turn diffuse strands into bright pink because the rest of the hair is shadowed");
+});
+
+
+test("connected highlighted strands survive disagreement without admitting unsupported background", () => {
+  const width = 14, height = 8, primary = new Float32Array(width * height), guard = new Float32Array(width * height), excluded = new Uint8Array(width * height);
+  for (let y = 2; y <= 5; y++) for (let x = 2; x <= 5; x++) { primary[y * width + x] = .95; guard[y * width + x] = .9; }
+  // Both models support a strand, but the multiclass model is uncertain at its golden tips.
+  for (let x = 6; x <= 9; x++) { primary[3 * width + x] = .94; guard[3 * width + x] = .36; }
+  // A hair-only false positive right next to the same seed is rejected by the guard.
+  primary[2 * width + 6] = .99; guard[2 * width + 6] = .02;
+  // An uncertain detached speck has no connection to reliable hair.
+  primary[6 * width + 12] = .96; guard[6 * width + 12] = .35;
+  const output = combineHairConfidence(primary, guard, excluded, width, height);
+  assert.ok(output[3 * width + 9] > .9, "Connected tips retain the confident model's evidence");
+  assert.ok(output[2 * width + 6] < .1, "Unsupported background must remain excluded");
+  assert.ok(output[6 * width + 12] < .6, "Detached weak evidence must not become foreground");
+  assert.ok(guard[3 * width + 9] < .4, "Native evidence is never mutated");
+});
+
+test("skin exclusion blocks strand recovery and cannot be crossed to reach uncertain regions", () => {
+  const primary = new Float32Array([.95, .95, .95, .95, .95]);
+  const guard = new Float32Array([.9, .4, .4, .4, .4]);
+  const output = combineHairConfidence(primary, guard, new Uint8Array([0, 0, 1, 0, 0]), 5, 1);
+  assert.ok(output[1] > .9); assert.equal(output[2], 0);
+  assert.ok(output[3] < .6 && output[4] < .6, "Recovery cannot jump across protected skin");
+  assert.throws(() => combineHairConfidence(primary, new Float32Array(1), new Uint8Array(5), 5, 1), /dimensions/);
+});

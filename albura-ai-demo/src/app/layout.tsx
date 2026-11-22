@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
+import "./guide.css";
+import "./camera.css";
+import "./studio.css";
 
 export const metadata: Metadata = {
   title: { default: "Al Bura Cosmetics · Virtual Colour Studio", template: "%s · Al Bura Cosmetics" },
@@ -11,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body>
         <a className="skip-link" href="#main-content">Skip to content</a>
         <Header />
