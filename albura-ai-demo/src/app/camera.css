@@ -23,3 +23,21 @@
 .photo-source { margin-block: 12px; font-size: .875rem; color: var(--muted); }
 @media (max-width: 400px) { .camera-actions .button { padding-inline: 12px; } }
 @media print { .tryon-mode-tabs, .camera-preview { display: none !important; } }
+
+/* Three independent modes; live frames and native video share identical geometry. */
+.tryon-mode-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
+.tryon-mode-tabs button { min-width: 0; line-height: 1.35; padding: 12px 4px; }
+.mode-note { display: block; font-size: .75rem; color: #79613d; margin-top: 4px; font-weight: 400; }
+.live-notice { display: flex; gap: 10px; padding: 14px; margin-bottom: 18px; border: 1px solid #dfccaa; background: #faf4e8; border-radius: 6px; }
+.live-notice svg { flex-shrink: 0; color: #89622b; margin-top: 2px; }
+.live-notice strong { font-size: 1rem; }
+.live-notice p { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+.live-processing { display: block; font-size: .875rem; margin-bottom: 16px; }
+.live-processing select { display: block; width: 100%; min-height: 46px; margin-top: 6px; border: 1px solid var(--line); border-radius: 5px; background: #faf9f6; color: var(--navy); padding: 10px; font-size: 1rem; }
+.live-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; visibility: hidden; }
+.live-stage canvas.is-visible { visibility: visible; }
+.live-stage canvas.is-mirrored { transform: scaleX(-1); }
+.live-metrics { font-size: .875rem; color: var(--muted); margin-block: 12px; }
+.live-slow { background: #faf2df; border-left: 3px solid var(--gold); padding: 12px; font-size: .875rem; margin-top: 12px; }
+.live-capture { display: grid; gap: 10px; justify-items: start; margin-top: 18px; }
+@media (max-width: 400px) { .tryon-mode-tabs button { font-size: .8125rem; } .mode-note { font-size: .7rem; } }

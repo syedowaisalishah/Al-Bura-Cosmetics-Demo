@@ -17,10 +17,18 @@ This is a company demonstration, not a production-ready product.
   skin exclusion protects the face. This can remove valid hair
   near skin. No synthetic masks are used. Zero-mask pixels are copied exactly;
   semantic errors inside a model-predicted mask are still possible.
-- **Camera capture:** The camera displays normal video; AI runs on a captured
-  still, not continuously. Permission, HTTPS/localhost, a supported browser and
+- **Camera capture:** Take Photo displays normal video; AI runs once on the
+  captured still. Permission, HTTPS/localhost, a supported browser and
   available hardware are required. Use the direct site URL if an embedded view
   blocks permission. Mobile browser policies vary; no universal support claim.
+- **Experimental live:** Separate VIDEO inference uses the existing two models,
+  with conservative skin exclusion and the shared colour engine. In automated
+  Chrome tests, CPU delivered about 3.3 displayed FPS; software-rendered GPU was
+  slower (about 0.7 sequential frames/sec after warm-up). Auto avoids known
+  software renderers. Actual hardware GPU speed is unverified. The preview
+  downscales after sustained slow pixel/transfer work, so fine edges can be missed. Take
+  Photo remains recommended. FPS is measured rather than guaranteed. The fixed
+  512/256 model tensor sizes limit what input downscaling can improve.
 - **Device coverage:** Automated Chrome checks used a virtual webcam with real
   portrait source frames and the real models. They do not certify physical
   webcam prompts, real phones, Safari or Firefox. Those remain device tests.

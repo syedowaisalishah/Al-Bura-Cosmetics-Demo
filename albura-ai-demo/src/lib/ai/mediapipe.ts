@@ -7,13 +7,15 @@ export const HAIR_MODEL_PATH = process.env.NEXT_PUBLIC_HAIR_MODEL_PATH || "/mode
 export const VISION_WASM_PATH = process.env.NEXT_PUBLIC_VISION_WASM_PATH || "/wasm";
 export const HAIR_GUARD_PATH = process.env.NEXT_PUBLIC_HAIR_GUARD_MODEL_PATH || "/models/selfie_multiclass_256x256.tflite";
 
-async function createVerifiedSegmenter(modelPath: string, wasmPath: string, expectedLabels: readonly string[]): Promise<ImageSegmenterInstance> {
+export interface SegmenterOptions { runningMode?: "IMAGE" | "VIDEO"; delegate?: "CPU" | "GPU"; canvas?: HTMLCanvasElement | OffscreenCanvas }
+async function createVerifiedSegmenter(modelPath: string, wasmPath: string, expectedLabels: readonly string[], options: SegmenterOptions = {}): Promise<ImageSegmenterInstance> {
   if (typeof window === "undefined" && typeof self === "undefined") throw new Error("Hair segmentation can only be initialized in a browser.");
   const { FilesetResolver, ImageSegmenter } = await import("@mediapipe/tasks-vision");
   const vision = await FilesetResolver.forVisionTasks(wasmPath);
   const segmenter = await ImageSegmenter.createFromOptions(vision, {
-    baseOptions: { modelAssetPath: modelPath, delegate: "CPU" },
-    runningMode: "IMAGE", outputCategoryMask: true, outputConfidenceMasks: true,
+    baseOptions: { modelAssetPath: modelPath, delegate: options.delegate ?? "CPU" },
+    runningMode: options.runningMode ?? "IMAGE", canvas: options.canvas,
+    outputCategoryMask: options.runningMode !== "VIDEO", outputConfidenceMasks: true,
   });
   const labels = segmenter.getLabels();
   if (labels.length !== expectedLabels.length || labels.some((label, i) => label !== expectedLabels[i])) {
@@ -21,11 +23,11 @@ async function createVerifiedSegmenter(modelPath: string, wasmPath: string, expe
   }
   return segmenter;
 }
-export function createHairSegmenter(options: { modelPath?: string; wasmPath?: string } = {}) {
-  return createVerifiedSegmenter(options.modelPath ?? HAIR_MODEL_PATH, options.wasmPath ?? VISION_WASM_PATH, HAIR_MODEL_LABELS);
+export function createHairSegmenter(options: SegmenterOptions & { modelPath?: string; wasmPath?: string } = {}) {
+  return createVerifiedSegmenter(options.modelPath ?? HAIR_MODEL_PATH, options.wasmPath ?? VISION_WASM_PATH, HAIR_MODEL_LABELS, options);
 }
-export function createHairGuard(modelPath: string, wasmPath: string) {
-  return createVerifiedSegmenter(modelPath, wasmPath, HAIR_GUARD_LABELS);
+export function createHairGuard(modelPath: string, wasmPath: string, options: SegmenterOptions = {}) {
+  return createVerifiedSegmenter(modelPath, wasmPath, HAIR_GUARD_LABELS, options);
 }
 
 export interface HairSegmenterClient {

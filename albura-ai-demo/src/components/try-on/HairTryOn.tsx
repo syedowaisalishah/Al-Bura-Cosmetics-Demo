@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { PhotoUploader } from "@/components/try-on/PhotoUploader";
 import { BeforeAfterSlider } from "@/components/try-on/BeforeAfterSlider";
+import { LiveCameraPreview } from "@/components/try-on/LiveCameraPreview";
 import { CameraPreview } from "@/components/try-on/CameraPreview";
 import { useTryOn } from "@/components/try-on/TryOnProvider";
 import { loadHairSegmenter, disposeHairSegmenter } from "@/lib/ai/mediapipe";
@@ -26,7 +27,7 @@ const messages: Record<TryOnStatus, string> = {
 export function HairTryOn({ active = true }: { active?: boolean }) {
   const { selectedShade: selected } = useTryOn();
   const [status, setStatus] = useState<TryOnStatus>("idle");
-  const [mode, setMode] = useState<"photo" | "camera">("photo");
+  const [mode, setMode] = useState<"photo" | "live" | "camera">("photo");
   const [photoSource, setPhotoSource] = useState<"upload" | "camera" | null>(null);
   const modeButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +112,7 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
   }
 
   useEffect(() => {
-    const currentCache = cache.current; if (!currentCache) return;
+    const currentCache = cache.current; if (!currentCache || mode === "live") return;
     const controller = new AbortController(); renderAbort.current?.abort(); renderAbort.current = controller;
     const job = photoJob.current;
     const current = () => !controller.signal.aborted && job === photoJob.current;
@@ -131,7 +132,7 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
       }
     })();
     return () => controller.abort();
-  }, [selected, cacheVersion]);
+  }, [selected, cacheVersion, mode]);
 
   function download() {
     if (!resultUrl || displayStatus !== "ready") return;
@@ -139,25 +140,30 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
     document.body.append(link); link.click(); link.remove();
   }
   function modeKeys(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    const next = event.key === "Home" ? 0 : event.key === "End" ? 1 : event.key === "ArrowRight" || event.key === "ArrowLeft" ? 1 - index : null;
+    const modes = ["photo", "live", "camera"] as const;
+    const next = event.key === "Home" ? 0 : event.key === "End" ? 2 : event.key === "ArrowRight" ? (index + 1) % 3 : event.key === "ArrowLeft" ? (index + 2) % 3 : null;
     if (next === null) return;
-    event.preventDefault(); setMode(next === 0 ? "photo" : "camera"); modeButtons.current[next]?.focus();
+    event.preventDefault(); setMode(modes[next]); modeButtons.current[next]?.focus();
   }
 
   return <Card className="tryon-card" aria-labelledby="tryon-title">
         <div className="card-heading"><div><p className="eyebrow">WINDOW 1</p><h2 id="tryon-title">Your colour preview</h2></div><ScanFace size={25} strokeWidth={1.25} aria-hidden="true" /></div>
         <div className="selected-shade"><span style={{ backgroundColor: selected.hex }} aria-hidden="true" /><p><strong>{selected.name}</strong><span>{selected.code} · {selected.hex}</span></p></div>
-        <div className="tryon-mode-tabs" role="tablist" aria-label="Choose how to add a photo">
+        <div className="tryon-mode-tabs" role="tablist" aria-label="Hair try-on modes">
           <button id="photo-mode-tab" ref={(element) => { modeButtons.current[0] = element; }} type="button" role="tab" aria-selected={mode === "photo"} aria-controls="photo-mode-panel" tabIndex={mode === "photo" ? 0 : -1} onClick={() => setMode("photo")} onKeyDown={(event) => modeKeys(event, 0)}>Upload Photo</button>
-          <button id="camera-mode-tab" ref={(element) => { modeButtons.current[1] = element; }} type="button" role="tab" aria-selected={mode === "camera"} aria-controls="camera-mode-panel" tabIndex={mode === "camera" ? 0 : -1} onClick={() => setMode("camera")} onKeyDown={(event) => modeKeys(event, 1)}>Take Photo</button>
+          <button id="live-mode-tab" ref={(element) => { modeButtons.current[1] = element; }} type="button" role="tab" aria-label="Live AI Camera (Experimental)" aria-selected={mode === "live"} aria-controls="live-mode-panel" tabIndex={mode === "live" ? 0 : -1} onClick={() => setMode("live")} onKeyDown={(event) => modeKeys(event, 1)}>Live AI Camera<span className="mode-note">Experimental</span></button>
+          <button id="camera-mode-tab" ref={(element) => { modeButtons.current[2] = element; }} type="button" role="tab" aria-selected={mode === "camera"} aria-controls="camera-mode-panel" tabIndex={mode === "camera" ? 0 : -1} onClick={() => setMode("camera")} onKeyDown={(event) => modeKeys(event, 2)}>Take Photo<span className="mode-note">Recommended</span></button>
         </div>
         <div id="photo-mode-panel" role="tabpanel" aria-labelledby="photo-mode-tab" hidden={mode !== "photo"}>
         <PhotoUploader hasPhoto={Boolean(originalUrl)} onFile={(file) => void processPhoto(file, "upload")} onReset={reset} />
         </div>
+        <div id="live-mode-panel" role="tabpanel" aria-labelledby="live-mode-tab" hidden={mode !== "live"}>
+          {mode === "live" && active && <LiveCameraPreview onCapture={(file) => { setMode("camera"); void processPhoto(file, "camera"); }} onTakePhoto={() => setMode("camera")} />}
+        </div>
         <div id="camera-mode-panel" role="tabpanel" aria-labelledby="camera-mode-tab" hidden={mode !== "camera"}>
           {mode === "camera" && active && <CameraPreview hasPhoto={photoSource === "camera"} onCapture={(file) => void processPhoto(file, "camera")} onRetake={reset} />}
         </div>
-        <div className="photo-result" aria-label="Photo colour result" aria-busy={busy}>
+        <div className="photo-result" aria-label="Photo colour result" aria-busy={busy} hidden={mode === "live"}>
         <div className="processing-status" role="status" aria-live="polite" aria-atomic="true">{busy && <LoaderCircle size={17} className="loading-icon" aria-hidden="true" />}<span>{messages[displayStatus]}</span></div>
         {error && <div className="tryon-error" role="alert"><AlertCircle size={19} aria-hidden="true" /><div><p>{error}</p>{originalUrl && !busy && <Button variant="secondary" onClick={() => { setError(null); if (cache.current) setCacheVersion((v) => v + 1); else if (photo.current) void analyze(photo.current, photoJob.current); }}>Retry preview</Button>}</div></div>}
         {originalUrl && <><p className="photo-source">{photoSource === "camera" ? "Captured photo" : "Uploaded photo"} · before and after</p><BeforeAfterSlider key={originalUrl} originalUrl={originalUrl} resultUrl={resultUrl} width={dimensions.width} height={dimensions.height} debugUrl={showMask ? maskUrl : null} /></>}

@@ -44,7 +44,19 @@ or route teardown. Camera failures leave Upload Photo available.
 
 Mobile browsers require permission and a secure origin. Physical mobile devices,
 Safari and Firefox still need their own verification. See
-[the current report](CAMERA_CAPTURE_REPORT.md) for the tested environment.
+[the current three-mode report](LIVE_CAMERA_REPORT.md) for the tested environment.
+
+## Experimental Live AI Camera
+
+Select **Live AI Camera** → **Start Live Camera**. This is a separate mode;
+Take Photo still shows normal video without inference. Automatic processing
+tries GPU, prefers CPU for known software renderers, and falls back to CPU on
+GPU initialization/frame errors. Select explicit CPU or GPU while stopped to
+compare on your device. Live uses fixed VIDEO models, `segmentForVideo`, one
+frame at a time, current-frame mask support and bounded adaptive resolution.
+Measured FPS appears after frames arrive. Take Photo is the recommended path
+for finer detail, before/after comparison and downloads. Its shortcut captures
+raw camera video rather than the recoloured canvas.
 
 ## Real `.env`
 
@@ -83,7 +95,7 @@ another port. `npm run dev` starts Next.js development mode. Stop with Ctrl+C.
 Type checking regenerates route types before `tsc --noEmit`; lint runs separately.
 
 `npm ci` runs the asset sync through postinstall. `predev` and `prebuild` also
-regenerate matching WASM files and the browser worker. If lifecycle scripts are
+regenerate matching WASM files and both browser workers. If lifecycle scripts are
 disabled, run `npm run assets:sync` explicitly. esbuild is a development-time
 worker bundler; it adds no server or paid runtime dependency.
 
@@ -97,8 +109,11 @@ using `npm run model:download`; invalid downloads fail without fake substitutes.
 The second AI model protects against observed hair-only background errors. Both
 load once per session and run in a local CPU worker for each new photo. Changing
 shade only recolours the cached image/mask. Camera captures use that same IMAGE
-worker and pipeline. There is no VIDEO segmenter, frame inference loop, adaptive
-resolution policy or temporal mask. Inference, masking and colour quality
+worker and pipeline. Live runs a separate VIDEO pair with mask/statistic
+smoothing and no photo-cache mutation. Input downscaling reduces pixel work,
+but the existing models still infer at their fixed 512/256 tensor sizes.
+See the measured CPU/software-GPU comparison in `LIVE_CAMERA_REPORT.md`.
+Inference, masking and colour quality
 remain affected by fine edges, lighting, occlusion and backgrounds. No model can
 guarantee pixel-perfect hair boundaries or real-world dye outcomes.
 

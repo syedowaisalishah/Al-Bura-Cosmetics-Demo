@@ -5,6 +5,11 @@ It requires no backend, cloud inference, database, secret API key or runtime
 server. Existing upload/capture, cached hair recolouring and guide behaviour
 remain unchanged by deployment preparation.
 
+Update 2026-11-23: the restored experimental live mode is also browser-only.
+The build now bundles and verifies **two workers** (IMAGE and VIDEO), with the
+same existing models and Vercel settings. `npm run deploy:check` passes under
+Node 22.22.1. See [current tests](LIVE_CAMERA_REPORT.md).
+
 ## Exact project settings
 
 | Setting | Value |

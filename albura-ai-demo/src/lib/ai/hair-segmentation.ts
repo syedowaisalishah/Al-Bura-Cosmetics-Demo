@@ -1,14 +1,11 @@
-import type { ImageSegmenter } from "@mediapipe/tasks-vision";
+import type { ImageSegmenter, ImageSegmenterResult } from "@mediapipe/tasks-vision";
 import { loadHairSegmenter } from "@/lib/ai/mediapipe";
-import { HAIR_CATEGORY_INDEX } from "@/lib/ai/mask-utils";
+import { combineHairConfidence, HAIR_CATEGORY_INDEX, resizeConfidenceMask, skinExclusion } from "@/lib/ai/mask-utils";
 import type { HairSegmentationResult } from "@/types/try-on";
 export type SegmentHair = (source: HTMLImageElement | HTMLCanvasElement | ImageBitmap) => Promise<HairSegmentationResult>;
 
-/** Runs inside the worker. Copy native buffers before releasing the MediaPipe result. */
-export function segmentWithModel(model: ImageSegmenter, source: ImageBitmap): HairSegmentationResult {
-  const started = performance.now();
-  const result = model.segment(source);
-  try {
+/** Copy native mask values during their valid lifetime. */
+function copyResult(result: ImageSegmenterResult): HairSegmentationResult {
     const confidence = result.confidenceMasks?.[HAIR_CATEGORY_INDEX], category = result.categoryMask;
     const mask = confidence ?? category;
     if (!mask || !Number.isInteger(mask.width) || !Number.isInteger(mask.height) || mask.width <= 0 || mask.height <= 0) throw new Error("The hair model returned no valid segmentation mask.");
@@ -31,8 +28,36 @@ export function segmentWithModel(model: ImageSegmenter, source: ImageBitmap): Ha
         skinConfidenceMask[i] = Math.max(0, Math.min(1, Math.max(body[i], face[i])));
       }
     }
-    return { width, height, categoryMask, hairConfidenceMask, skinConfidenceMask, processingTimeMs: performance.now() - started };
-  } finally { result.close(); }
+    return { width, height, categoryMask, hairConfidenceMask, skinConfidenceMask, processingTimeMs: 0 };
+}
+
+/** VIDEO uses the callback API to avoid SDK-owned mask clones each frame. */
+export function segmentWithModel(model: ImageSegmenter, source: ImageBitmap, timestampMs?: number): HairSegmentationResult {
+  const started = performance.now();
+  let owned: HairSegmentationResult | undefined;
+  if (timestampMs === undefined) {
+    const result = model.segment(source);
+    try { owned = copyResult(result); } finally { result.close(); }
+  } else {
+    if (!Number.isFinite(timestampMs) || timestampMs < 0) throw new Error("A valid millisecond timestamp is required.");
+    model.segmentForVideo(source, timestampMs, (result) => { owned = copyResult(result); });
+  }
+  if (!owned) throw new Error("The hair model returned no segmentation result.");
+  owned.processingTimeMs = performance.now() - started;
+  return owned;
+}
+
+/** The same real dual-model evidence and skin protection are used in both modes. */
+export function segmentWithModels(model: ImageSegmenter, guard: ImageSegmenter, source: ImageBitmap, timestampMs?: number) {
+  const result = segmentWithModel(model, source, timestampMs), confirmation = segmentWithModel(guard, source, timestampMs);
+  const confidence = confirmation.width === result.width && confirmation.height === result.height ? confirmation.hairConfidenceMask
+    : resizeConfidenceMask(confirmation.hairConfidenceMask, confirmation.width, confirmation.height, result.width, result.height);
+  if (!confirmation.skinConfidenceMask) throw new Error("The safety model returned no skin confidence masks.");
+  const skin = resizeConfidenceMask(confirmation.skinConfidenceMask, confirmation.width, confirmation.height, result.width, result.height);
+  result.hairConfidenceMask = combineHairConfidence(result.hairConfidenceMask, confidence, skinExclusion(skin, result.width, result.height), result.width, result.height);
+  for (let i = 0; i < confidence.length; i++) result.categoryMask[i] = result.hairConfidenceMask[i] > 0.5 ? 1 : 0;
+  result.processingTimeMs += confirmation.processingTimeMs;
+  return result;
 }
 
 export const segmentHair: SegmentHair = async (source) => {

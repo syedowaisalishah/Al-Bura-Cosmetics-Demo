@@ -34,7 +34,7 @@ for (const page of ["index.html", "try-on/index.html", "404.html"]) {
 for (const model of MODEL_ARTIFACTS) {
   verifyModel(await asset(`models/${model.name}.tflite`), model);
 }
-assert.ok((await asset("workers/hair-segmenter.js")).length > 1000, "The bundled AI worker is missing.");
+for (const worker of ["hair-segmenter", "live-hair-segmenter"]) assert.ok((await asset(`workers/${worker}.js`)).length > 1000, `The bundled ${worker} worker is missing.`);
 
 const wasmSource = join(project, "node_modules/@mediapipe/tasks-vision/wasm");
 const runtimeFiles = (await readdir(wasmSource)).filter((path) => /\.(js|wasm)$/.test(path));
@@ -56,4 +56,4 @@ async function inspect(directory: string) {
   }
 }
 await inspect(output);
-console.log(`Deployment output verified: ${files} files; pages, 2 models, worker and ${runtimeFiles.length} matching SDK runtime assets. No private env/source directories.`);
+console.log(`Deployment output verified: ${files} files; pages, 2 models, 2 workers and ${runtimeFiles.length} matching SDK runtime assets. No private env/source directories.`);

@@ -14,10 +14,10 @@ console.log(`Copied ${files.length} matching MediaPipe runtime assets to public/
 const project = fileURLToPath(new URL("../", import.meta.url));
 await build({
   absWorkingDir: project,
-  entryPoints: ["src/lib/ai/segmentation.worker.ts"],
-  outfile: "public/workers/hair-segmenter.js", bundle: true,
+  entryPoints: { "hair-segmenter": "src/lib/ai/segmentation.worker.ts", "live-hair-segmenter": "src/lib/ai/live-segmentation.worker.ts" },
+  outdir: "public/workers", bundle: true,
   format: "iife", platform: "browser", target: "es2020", minify: true,
   // Runtime model paths are passed in the worker's initialization message.
   define: { "process.env.NEXT_PUBLIC_HAIR_MODEL_PATH": "undefined", "process.env.NEXT_PUBLIC_VISION_WASM_PATH": "undefined", "process.env.NEXT_PUBLIC_HAIR_GUARD_MODEL_PATH": "undefined" },
 });
-console.log("Built the local CPU segmentation worker.");
+console.log("Built the separate IMAGE and VIDEO segmentation workers.");

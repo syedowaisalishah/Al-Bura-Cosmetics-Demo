@@ -10,11 +10,13 @@ npm run dev
 
 Open http://127.0.0.1:3000/try-on/. Upload a portrait or capture a camera photo,
 choose one of twelve illustrative shades, compare and download the result, then
-review the synchronized educational guide. All photo processing stays local.
+review the synchronized educational guide. Experimental Live AI Camera is also
+available; Take Photo is recommended for finer detail. Processing stays local.
 
 - [Installation, checks, build and exact Vercel deployment steps](albura-ai-demo/README.md)
 - [Clean-build deployment readiness](albura-ai-demo/docs/VERCEL_READINESS.md)
 - [Three-minute company demonstration](albura-ai-demo/docs/DEMO_GUIDE.md)
+- [Three-mode camera implementation and CPU/GPU tests](albura-ai-demo/docs/LIVE_CAMERA_REPORT.md)
 - [Phase 5 audit and test report](albura-ai-demo/docs/PHASE_5_REPORT.md)
 - [Known limitations and production work](albura-ai-demo/docs/KNOWN_LIMITATIONS.md)
 

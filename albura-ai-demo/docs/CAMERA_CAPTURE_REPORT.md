@@ -1,5 +1,9 @@
 # Camera Capture + AI Photo Try-On
 
+Historical implementation report for the capture-only stage. On 2026-11-23 a
+separate experimental live mode was restored alongside this unchanged camera
+capture component. See [current three-mode report](LIVE_CAMERA_REPORT.md).
+
 Replaces the earlier continuous VIDEO inference implementation. Window 1 has
 **Upload Photo** and **Take Photo** tabs; both feed one photo-processing path.
 No models, dependencies, paid APIs, backend or database were added.

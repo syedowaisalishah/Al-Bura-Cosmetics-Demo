@@ -11,19 +11,21 @@ export interface HairColorCache {
   mean: LabColor;
   toneAnchor: number;
 }
-export interface HairRecolorInput { cache: HairColorCache; shade: Shade; intensity?: number; signal?: AbortSignal }
+export interface HairColorWorkspace { indices?: Uint32Array; lab?: Float32Array; yieldToBrowser?: boolean }
+export interface HairRecolorInput { cache: HairColorCache; shade: Shade; intensity?: number; signal?: AbortSignal; output?: ImageData; yieldToBrowser?: boolean }
 export type RecolorHair = (input: HairRecolorInput) => Promise<ImageData>;
 const pause = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 function checkAbort(signal?: AbortSignal) { if (signal?.aborted) throw new DOMException("Rendering cancelled", "AbortError"); }
 const CHUNK = 4096;
 
 /** Cache source-relative colour detail once per photo, never from a recoloured result. */
-export async function prepareHairColor(source: ImageData, mask: RefinedHairMask, signal?: AbortSignal): Promise<HairColorCache> {
+export async function prepareHairColor(source: ImageData, mask: RefinedHairMask, signal?: AbortSignal, workspace: HairColorWorkspace = {}): Promise<HairColorCache> {
   if (source.width !== mask.width || source.height !== mask.height || mask.alpha.length !== source.width * source.height) throw new Error("Hair mask and photo dimensions do not match.");
   checkAbort(signal);
   let count = 0;
   for (let i = 0; i < mask.alpha.length; i++) if (mask.alpha[i] > 0 && source.data[i * 4 + 3] > 0) count++;
-  const indices = new Uint32Array(count), lab = new Float32Array(count * 3);
+  const indices = workspace.indices && workspace.indices.length >= count ? workspace.indices.subarray(0, count) : new Uint32Array(count);
+  const lab = workspace.lab && workspace.lab.length >= count * 3 ? workspace.lab.subarray(0, count * 3) : new Float32Array(count * 3);
   let entry = 0;
   for (let i = 0; i < mask.alpha.length; i++) if (mask.alpha[i] > 0 && source.data[i * 4 + 3] > 0) indices[entry++] = i;
   let weight = 0, l = 0, a = 0, b = 0;
@@ -37,7 +39,7 @@ export async function prepareHairColor(source: ImageData, mask: RefinedHairMask,
       weight += alpha; l += value.l * alpha; a += value.a * alpha; b += value.b * alpha;
       lightnessHistogram[Math.round(clamp(value.l, 0, 100))] += alpha;
     }
-    await pause();
+    if (workspace.yieldToBrowser !== false) await pause();
   }
   checkAbort(signal);
   if (weight < 20) throw new Error("No clear hair region was detected. Try a closer portrait with visible hair and even lighting.");
@@ -53,10 +55,12 @@ export async function prepareHairColor(source: ImageData, mask: RefinedHairMask,
 
 const logit = (v: number) => Math.log(v / (1 - v));
 /** Bounded luminance mapping plus source chroma detail; specular highlights keep their light. */
-export const recolorHair: RecolorHair = async ({ cache, shade, intensity = 0.88, signal }) => {
+export const recolorHair: RecolorHair = async ({ cache, shade, intensity = 0.88, signal, output: reusableOutput, yieldToBrowser = true }) => {
   checkAbort(signal);
   const { source, mask, indices, lab, mean, toneAnchor } = cache;
-  const output = new ImageData(new Uint8ClampedArray(source.data), source.width, source.height);
+  if (reusableOutput && (reusableOutput.width !== source.width || reusableOutput.height !== source.height || reusableOutput.data.buffer === source.data.buffer)) throw new Error("Invalid recolour workspace: dimensions must match and original pixels must not alias output.");
+  const output = reusableOutput ?? new ImageData(new Uint8ClampedArray(source.data), source.width, source.height);
+  if (reusableOutput) output.data.set(source.data);
   const strength = Number.isFinite(intensity) ? clamp(intensity, 0, 1) : 0;
   if (strength === 0) return output;
   const target = shade.lab ?? rgbToLab(hexToRgb(shade.hex));
@@ -84,7 +88,7 @@ export const recolorHair: RecolorHair = async ({ cache, shade, intensity = 0.88,
       output.data[p + 1] = source.data[p + 1] + (rgb.g - source.data[p + 1]) * alpha;
       output.data[p + 2] = source.data[p + 2] + (rgb.b - source.data[p + 2]) * alpha;
     }
-    await pause();
+    if (yieldToBrowser) await pause();
   }
   checkAbort(signal);
   return output;

@@ -17,7 +17,7 @@ export function ShadePalette({ shades, selectedShadeId, onSelect }: ShadePalette
   return (
     <section className="palette-section" aria-labelledby="palette-title">
       <div className="section-heading"><div><p className="eyebrow">A WORLD OF POSSIBILITIES</p><h2 id="palette-title" tabIndex={-1}>The demo shade edit</h2></div><span className="quiet-tag">12 illustrative shades</span></div>
-      <p className="section-description">Choose a shade for your photo. Sample colours are illustrative and pending official Al Bura shade-card approval.</p>
+      <p className="section-description">Choose a shade for your preview. Sample colours are illustrative and pending official Al Bura shade-card approval.</p>
       <div className="palette-tools">
         <div className="shade-search"><label htmlFor="shade-search">Find a shade</label><div><Search size={18} aria-hidden="true" /><input id="shade-search" type="search" placeholder="Name, code or colour…" value={query} onChange={(event) => setQuery(event.target.value)} /></div></div>
         <div className="family-filters" role="group" aria-label="Filter shades by colour family">{families.map((item) => <button key={item.value} type="button" aria-pressed={family === item.value} onClick={() => setFamily(item.value)}>{item.label}</button>)}</div>

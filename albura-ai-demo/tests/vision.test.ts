@@ -161,3 +161,21 @@ test("skin exclusion blocks strand recovery and cannot be crossed to reach uncer
   assert.ok(output[3] < .6 && output[4] < .6, "Recovery cannot jump across protected skin");
   assert.throws(() => combineHairConfidence(primary, new Float32Array(1), new Uint8Array(5), 5, 1), /dimensions/);
 });
+
+test("reused live colour buffers match still colour math without modifying original or excluded pixels", async () => {
+  const source = new ImageData(new Uint8ClampedArray(400), 100, 1), alpha = new Float32Array(100);
+  for (let i = 0; i < 100; i++) { source.data.set([20 + i * 2, 15 + i, 12 + i, 255], i * 4); if (i >= 10 && i < 90) alpha[i] = .9; }
+  const original = new Uint8ClampedArray(source.data), mask = { width: 100, height: 1, alpha, hairPixels: 80 };
+  const cache = await prepareHairColor(source, mask);
+  const indices = new Uint32Array(120), lab = new Float32Array(360);
+  const live = await prepareHairColor(source, mask, undefined, { indices, lab, yieldToBrowser: false });
+  assert.equal(live.indices.buffer, indices.buffer); assert.equal(live.lab.buffer, lab.buffer);
+  const output = new ImageData(new Uint8ClampedArray(400).fill(255), 100, 1);
+  for (const hex of ["#763747", "#B0633D", "#D8C5A4"]) {
+    const target = { ...shade, hex };
+    assert.equal(await recolorHair({ cache: live, shade: target, output, yieldToBrowser: false }), output);
+    assert.deepEqual(output.data, (await recolorHair({ cache, shade: target })).data);
+  }
+  assert.deepEqual(source.data, original);
+  await assert.rejects(recolorHair({ cache, shade, output: source }), /must not alias/);
+});

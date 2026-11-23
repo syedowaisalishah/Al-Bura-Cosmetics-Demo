@@ -1,16 +1,18 @@
 # Al Bura Cosmetics — AI Hair Colour Try-On Demo
 
-A browser-only cosmetics demonstration: upload a portrait or capture a camera
-photo, try twelve illustrative hair shades, compare before/after, save a PNG and
-review a synchronized educational colour guide. Photos stay on the device.
+A browser-only cosmetics demonstration with three modes: Upload Photo, Live AI
+Camera (Experimental), and Take Photo (recommended). Try twelve illustrative
+hair shades and review a synchronized educational colour guide. Uploaded and
+captured photos support before/after comparison and PNG download. Images and
+video stay on the device.
 
 ## Technologies
 
 Next.js 16.4.6 App Router, React 19.3, TypeScript, Tailwind CSS 4, Canvas 2D and
 MediaPipe Tasks Vision 1.2.3. The two existing official Google models run locally
-in an IMAGE-mode worker. CIELAB recolouring preserves strand contrast, limits
+in separate IMAGE and VIDEO workers. CIELAB recolouring preserves strand contrast, limits
 saturation and protects bright reflections. There is no paid API, inference
-server, database or continuous camera AI loop. This is a demo, not production-ready.
+server or database. This is a demo, not production-ready.
 
 ## Install and run
 
@@ -22,8 +24,16 @@ npm run dev
 ```
 
 Open http://127.0.0.1:3000/try-on/. Installation generates matching local WASM and
-worker assets; models are included in `public/models`. Model loading starts only
-when a photo is processed. Camera preview is normal video with no inference.
+worker assets; models are included in `public/models`. Upload Photo and Take
+Photo use the same cached still-image pipeline. Take Photo previews normal video
+without inference; the optional Live AI Camera mode runs continuous VIDEO
+segmentation and shows measured FPS. Both load AI only when needed.
+
+Live defaults to GPU acceleration with CPU fallback, preferring CPU when a known
+software GPU renderer is detected. Explicit CPU/GPU choices are available while
+stopped. Processing is limited to one frame at a time and adapts resolution on
+slow pixel processing. Take Photo preserves finer detail; live performance remains device
+dependent. See [live implementation and measurements](docs/LIVE_CAMERA_REPORT.md).
 
 This workspace has a real Git-ignored `.env` (mode 600), with local public asset
 paths. No secret credentials are required; fresh clones work with defaults.
@@ -76,8 +86,10 @@ For eligible use:
    external AI. `.vercelignore` also excludes local private/build/test files.
 6. Deploy, then use the returned **HTTPS** address. Visit `/` and `/try-on/`,
    upload a photo, choose a shade, check Download Result, and allow camera access
-   for Take Photo. On a phone, open the HTTPS address in its own browser.
+   for Take Photo and Experimental Live Preview. On a phone, open the HTTPS
+   address in its own browser.
 7. In browser Network tools confirm successful `/workers/hair-segmenter.js`,
+   `/workers/live-hair-segmenter.js` (when live mode starts),
    `/models/hair_segmenter.tflite`,
    `/models/selfie_multiclass_256x256.tflite` and the matching `/wasm/` requests.
    A missing file or HTML response for a model/WASM path indicates a wrong root,
@@ -120,7 +132,8 @@ Settings references: [Vercel build configuration](https://vercel.com/docs/builds
 - [Known limitations and production work](docs/KNOWN_LIMITATIONS.md)
 - [Phase 5 audit, changed files and final verification](docs/PHASE_5_REPORT.md)
 - [Architecture](docs/ARCHITECTURE.md) and [local configuration](docs/SETUP.md)
-- [Camera capture implementation](docs/CAMERA_CAPTURE_REPORT.md)
+- [Three-mode implementation, CPU/GPU measurements and tests](docs/LIVE_CAMERA_REPORT.md)
+- [Camera capture implementation history](docs/CAMERA_CAPTURE_REPORT.md)
 - [Official model provenance, hashes and licenses](public/models/README.md)
 
 Every shade is illustrative and pending official Al Bura approval. There is no

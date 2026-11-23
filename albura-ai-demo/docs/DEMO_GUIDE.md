@@ -34,23 +34,31 @@ physical camera has been tested merely because automated camera checks pass.
    Capture Photo freezes the frame, stops the tracks and processes the local
    PNG. Stop Camera cancels. Retake opens a new preview; failed permission keeps
    the previous photo. Switching tabs or hiding/leaving the page stops the stream.
-3. **Choose a shade:** Search by name, code, HEX, level or reflection. Combine a
+3. **Optional live preview:** Select Live AI Camera → Start Live Camera. Allow
+   permission and wait for the Experimental Live Preview. Watch measured FPS;
+   Take Photo is recommended if slow. CPU/GPU selection is available while
+   stopped. Show original compares with normal video. Take Photo (recommended)
+   captures the untouched feed and enters the still pipeline. Switching modes,
+   hiding the page or opening the mobile guide stops live processing.
+4. **Choose a shade:** Search by name, code, HEX, level or reflection. Combine a
    family filter with the search. Clear filters restores the twelve samples;
    filtering does not change the selected shade. Selected details remain in
    Window 1 and Window 2 even when its tile is filtered out.
-4. **Compare:** Drag the divider, use the range slider/arrow keys, or use the three
+5. **Compare:** Drag the divider, use the range slider/arrow keys, or use the three
    view buttons. Replacing/capturing a new image starts with a 50/50 comparison.
-5. **Save:** Download Result is enabled only when the selected shade is ready.
+6. **Save:** Download Result is enabled only when the selected shade is ready.
    It saves a processed PNG. Changing shades always starts from the original
    cached pixels, so repeated selections do not accumulate colour.
-6. **Review:** Set natural level 1–10, history, grey percentage, length and density
+7. **Review:** Set natural level 1–10, history, grey percentage, length and density
    manually. Target level/reflection come from the chosen sample shade. The
    guide calculates a demonstration level difference/classification only. Print
    demo guide prints the assessment and safety notices without the portrait.
 
 ## Implemented
 
-Photo upload and camera capture; real local dual-model IMAGE segmentation;
+Three modes: photo upload, experimental live camera, and camera capture; real
+local dual-model IMAGE/VIDEO segmentation; measured live FPS, CPU/GPU selection
+and fallback;
 conservative confidence/skin mask, inward edge feathering; texture-preserving
 CIELAB recolouring; twelve validated illustrative shades; search/family filters;
 shared selection; comparison; PNG download; reset/retake/errors; responsive studio
