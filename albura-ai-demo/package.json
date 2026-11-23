@@ -7,7 +7,7 @@
     "predev": "npm run assets:sync",
     "build": "next build",
     "prebuild": "npm run assets:sync && npm run model:verify",
-    "start": "tsx scripts/serve-static.ts",
+    "start": "next start --hostname 127.0.0.1",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "assets:sync": "tsx scripts/sync-mediapipe-assets.ts",

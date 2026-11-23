@@ -6,6 +6,7 @@ import "./globals.css";
 import "./guide.css";
 import "./camera.css";
 import "./studio.css";
+import "./consultation.css";
 
 export const metadata: Metadata = {
   title: { default: "Al Bura Cosmetics · Virtual Colour Studio", template: "%s · Al Bura Cosmetics" },

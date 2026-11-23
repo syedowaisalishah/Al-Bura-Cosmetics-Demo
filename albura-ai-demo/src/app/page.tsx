@@ -22,10 +22,10 @@ export default function HomePage() {
       </section>
       <section className="studio-intro">
         <div className="container">
-          <div className="section-heading"><div><p className="eyebrow">ONE STUDIO, TWO PERSPECTIVES</p><h2>See the colour. Understand the journey.</h2></div><span className="quiet-tag">Photo & camera capture</span></div>
+          <div className="section-heading"><div><p className="eyebrow">ONE STUDIO, TWO PERSPECTIVES</p><h2>See the colour. Understand the journey.</h2></div><span className="quiet-tag">Photo, camera & consultation</span></div>
           <div className="intro-grid">
             <article><ScanFace size={25} strokeWidth={1.25} aria-hidden="true" /><h3>Your virtual try-on</h3><p>Explore shades with a portrait comparison or a photo captured with your camera. Save your favourite as a PNG.</p></article>
-            <article><BookOpen size={25} strokeWidth={1.25} aria-hidden="true" /><h3>Your colour companion</h3><p>A second window for guidance based on your starting hair level and chosen shade.</p></article>
+            <article><BookOpen size={25} strokeWidth={1.25} aria-hidden="true" /><h3>Your colour companion</h3><p>Your photo suggests a starting hair level. Confirm it to see a personalised shade assessment and save a consultation summary.</p></article>
             <article><SwatchBook size={25} strokeWidth={1.25} aria-hidden="true" /><h3>A palette to explore</h3><p>Twelve illustrative colours give a first look at the future shade-card experience.</p></article>
           </div>
           <div className="mini-palette" aria-label="Illustrative demo palette">{demoShades.map((shade) => <span key={shade.id} style={{ backgroundColor: shade.hex }} title={`${shade.name} — illustrative`} />)}</div>

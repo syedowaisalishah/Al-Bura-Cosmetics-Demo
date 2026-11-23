@@ -153,7 +153,7 @@ export function LiveCameraPreview({ onCapture, onTakePhoto }: { onCapture: (file
     {active && status !== "capturing" && <p className="live-metrics">{metrics.fps ? `${metrics.fps.toFixed(1)} measured FPS · ${metrics.delegate} · ${metrics.width} × ${metrics.height}` : "Measuring live preview speed…"}</p>}
     {metrics.fallback && active && <p className="small-note">{metrics.fallback}</p>}
     {metrics.slow && active && <p className="live-slow">This device is processing slowly. Take Photo is recommended; it uses the full captured image.</p>}
-    <div className="live-capture"><Button variant="secondary" onClick={() => hasVideo ? void captureOriginal() : onTakePhoto()} disabled={status === "capturing"}>Take Photo (recommended)</Button><p className="small-note">Captures the original camera feed, then runs the still-image AI once. Colour changes, comparison and download are available afterward.</p></div>
+    <div className="live-capture"><Button variant="secondary" onClick={() => hasVideo ? void captureOriginal() : onTakePhoto()} disabled={status === "capturing"}>Take Photo (recommended)</Button><p className="small-note">Captures the original camera feed, then runs the still-image AI once. Capture also updates your starting-level estimate in Window 2.</p></div>
     <p className="small-note camera-privacy">Video, captured photos and AI processing stay in your browser. Switching modes stops the live camera.</p>
   </section>;
 }

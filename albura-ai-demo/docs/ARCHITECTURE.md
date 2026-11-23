@@ -1,4 +1,23 @@
-# Application architecture
+# Current submission architecture
+
+The November 23 interview demo is a full-stack Next.js app. The earlier static
+export architecture below is historical. Read the app README for deployment.
+
+- Browser: original-photo decode, real MediaPipe IMAGE/VIDEO workers, mask
+  refinement, cached colour rendering and downloads. Photos never reach the API.
+- `photo-analysis.ts`: estimates starting depth from original masked Lab pixels,
+  using an illustrative reference scale. User confirmation/override is required.
+- Context: shares shade, photo handoff, confirmation, profile and assessment.
+  Guide updates never rerun segmentation or recolour an unchanged shade.
+- `POST /api/guide/calc/`: bounded JSON, strict Zod schema, trusted catalogue
+  lookup, deterministic assessment and contextual notes. No chemical formulas.
+- `GET /api/shades/`, `/api/health/`: versioned demo data and service health.
+- Mobile tabs preserve photo/profile state and stop hidden camera resources.
+- Standard Next.js Node/serverless build; Vercel Next.js preset, `.next` output.
+  Database/admin/approved product rules remain production work.
+
+## Earlier implementation record
+
 
 One Next.js App Router app with React, strict TypeScript and Tailwind CSS. The
 browser reads an uploaded or camera-captured photo, runs MediaPipe CPU models,

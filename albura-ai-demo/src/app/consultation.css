@@ -1,0 +1,74 @@
+/* The two-day interview demo: one clear journey, two connected workspaces. */
+.studio-page { padding-top: 34px; }
+.studio-page-heading h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); }
+.phase-notice { border-radius: 9px; font-size: .875rem; }
+.studio-instructions { margin-block: 24px; }
+.studio-windows { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; }
+.card { border-radius: 14px; box-shadow: 0 3px 20px #13283f04; }
+.card-heading h2 { font-size: 1.65rem; }
+.shade-quickpick { margin-block: 22px 26px; padding: 20px 22px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+.shade-quickpick > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.shade-quickpick strong { font-size: 1rem; }
+.shade-quickpick > div:first-child > span, .shade-quickpick > a { font-size: .875rem; color: var(--muted); }
+.shade-quickpick > a { display: inline-block; margin-top: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.quick-shades { display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap: 10px; margin-top: 16px; }
+.quick-shades button { display: grid; justify-items: center; align-content: start; gap: 7px; font-size: .875rem; line-height: 1.25; text-align: center; cursor: pointer; padding: 7px 2px; min-width: 0; border: 1px solid transparent; border-radius: 8px; }
+.quick-shades button > span:first-child { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #0001; box-shadow: inset 0 0 0 2px #fff4; }
+.quick-shades button[aria-pressed=true] { background: #f8f3ea; border-color: var(--gold); }
+.consultation-intro { color: var(--muted); font-size: .9375rem; margin-top: 18px; }
+.photo-handoff { display: flex; gap: 11px; align-items: flex-start; background: #f3f5f7; border: 1px solid #dce2e8; padding: 13px; border-radius: 8px; margin-top: 18px; }
+.photo-handoff svg { flex-shrink: 0; margin-top: 3px; color: #53687e; }
+.photo-handoff strong { font-size: .9375rem; }
+.photo-handoff p { font-size: .875rem; margin-top: 3px; color: var(--muted); }
+.photo-handoff.has-analysis { background: #f0f6f1; border-color: #d0e2d4; }
+.photo-handoff.has-analysis svg { color: #456c4e; }
+.consultation-target { display: flex; align-items: center; gap: 12px; padding-block: 22px 18px; }
+.consultation-target > span:first-child { width: 45px; height: 54px; flex-shrink: 0; border-radius: 20px 20px 3px 3px; }
+.consultation-target .eyebrow { display: block; margin-bottom: 3px; font-size: .75rem; }
+.consultation-target h3 { font-family: Georgia, serif; font-size: 1.55rem; }
+.consultation-target p { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+.consultation-sample { font-size: .75rem; color: #775b30; background: #f8f2e5; border-radius: 6px; padding: 5px 8px; margin-left: auto; white-space: nowrap; }
+.consultation-depth { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: #fcfbf8; }
+.consultation-depth > div { padding: 13px 10px; border-right: 1px solid var(--line); text-align: center; min-width: 0; }
+.consultation-depth > div:last-child { border: 0; }
+.consultation-depth span, .consultation-depth small { display: block; font-size: .8125rem; color: var(--muted); line-height: 1.45; }
+.consultation-depth strong { display: block; font-family: Georgia, serif; font-size: 2rem; line-height: 1.2; margin-block: 6px; font-weight: 400; }
+.consultation-card .guide-section { margin-top: 20px; padding-top: 18px; }
+.consultation-card .hair-level-section legend { font-size: 1rem; font-weight: 600; }
+.consultation-card .small-note { font-size: .875rem; }
+.consultation-card .level-swatches { margin-block: 13px; }
+.consultation-card .level-swatches button > span:first-child { height: 30px; }
+.consultation-card .level-selection > span { font-size: .8125rem; }
+.confirm-level { width: 100%; margin-top: 15px; }
+.use-photo-level { font-size: .875rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; color: #7c592b; margin-top: 6px; }
+.consultation-assessment { background: var(--navy); color: #fff; padding: 20px; border-radius: 9px; margin-top: 20px; }
+.assessment-status { display: flex; gap: 8px; align-items: center; color: #e4cfaa; font-size: .8125rem; margin-bottom: 12px; }
+.consultation-assessment h3 { font-family: Georgia, serif; font-size: 1.45rem; line-height: 1.25; }
+.consultation-assessment > p { color: #dce3eb; margin-top: 10px; font-size: .875rem; }
+.consultation-card .guide-input-controls { gap: 12px; margin-top: 13px; }
+.consultation-card .field label { font-size: .875rem; }
+.consultation-card .field select { font-size: 1rem; padding: 10px 32px 10px 12px; min-height: 45px; }
+.consultation-notes { margin-top: 20px; }
+.consultation-notes h3 { font-size: 1rem; }
+.consultation-notes ul { padding-left: 18px; font-size: .875rem; color: var(--muted); margin-block: 10px 0; }
+.consultation-notes li { padding-left: 3px; margin-top: 8px; }
+.consultation-reference { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 20px; padding-block: 15px; }
+.consultation-reference > summary { cursor: pointer; font-size: .9375rem; font-weight: 500; }
+.consultation-reference .guide-section { border-top: 0; margin-top: 0; }
+.consultation-safety, .consultation-approval { display: flex; align-items: flex-start; gap: 9px; }
+.consultation-safety svg, .consultation-approval svg { flex-shrink: 0; margin-top: 3px; color: #82704b; }
+.consultation-safety p, .consultation-approval p { font-size: .8125rem; color: var(--muted); }
+.consultation-safety strong { font-size: .875rem; }
+.consultation-approval { margin-top: 18px; }
+.consultation-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+.consultation-actions .button { font-size: .875rem; padding: 11px 13px; }
+.consultation-service { margin-top: 12px; color: var(--muted); font-size: .8125rem; }
+.photo-consultation-link { display: block; background: #f0f6f1; padding: 12px 14px; border-radius: 7px; color: #365841; font-size: .875rem; margin-top: 16px; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 1050px) { .quick-shades { grid-template-columns: repeat(6,minmax(0,1fr)); } .studio-windows { grid-template-columns: 1.1fr 1fr; gap: 18px; } .consultation-sample { display: none; } }
+@media (max-width: 760px) { .studio-windows { grid-template-columns: 1fr; } .quick-shades { display: flex; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; } .quick-shades button { flex: 0 0 88px; scroll-snap-align: start; } .shade-quickpick { padding: 16px; } .shade-quickpick > div:first-child { align-items: flex-start; flex-direction: column; gap: 3px; } .consultation-card .guide-input-controls { grid-template-columns: 1fr 1fr; } .studio-tabs { border-radius: 9px; } .studio-tabs button { border-radius: 6px; } }
+@media (max-width: 380px) { .consultation-card .guide-input-controls { grid-template-columns: 1fr; } .consultation-depth > div { padding-inline: 5px; } }
+@media print { .shade-quickpick, .studio-instructions, .consultation-actions, .confirm-level, .consultation-reference, .consultation-service, .consultation-intro { display: none !important; } .consultation-card { box-shadow: none; } .consultation-assessment { break-inside: avoid; } .consultation-depth, .consultation-target, .consultation-notes, .photo-handoff, .consultation-approval { break-inside: avoid; } }
+
+@media (max-width: 760px) { .consultation-card .level-swatches { display: flex; gap: 5px; overflow-x: auto; padding: 4px 2px; } .consultation-card .level-swatches button { flex: 0 0 42px; min-height: 64px; } }
+
+@media print { .guide-profile-inputs { display: none !important; } }

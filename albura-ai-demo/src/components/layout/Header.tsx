@@ -11,7 +11,7 @@ export function Header() {
         <nav className="main-nav" aria-label="Main navigation">
           <Link href="/">Overview</Link>
           <Link href="/try-on/">Try-on studio</Link>
-          <Link href="/try-on/#technical-guide">Technical guide</Link>
+          <a href="/try-on/#technical-guide">Colour consultation</a>
         </nav>
         <span className="header-tag">COLOUR, REIMAGINED</span>
       </div>

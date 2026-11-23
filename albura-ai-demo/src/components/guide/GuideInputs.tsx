@@ -15,21 +15,14 @@ function SelectField<T extends string>({ id, label, value, options, onChange }: 
 }
 export function GuideInputs() {
   const { hairHistory, greyPercentage, hairLength, hairDensity, setGuideInput } = useTryOn();
-  return <section className="guide-section" aria-labelledby="history-title">
-    <h3 id="history-title">Your hair history & details</h3>
-    <p className="small-note">Choose your own details. These demonstration defaults can be changed at any time.</p>
+  return <section className="guide-section guide-profile-inputs" aria-labelledby="history-title">
+    <h3 id="history-title">Personalise your consultation</h3>
+    <p className="small-note">These details update the consultation notes below.</p>
     <div className="guide-input-controls">
       <SelectField<HairHistory> id="hair-history" label="Hair history" value={hairHistory} options={HAIR_HISTORY_OPTIONS} onChange={(value) => setGuideInput("hairHistory", value)} />
       <SelectField<GreyPercentage> id="grey-percentage" label="Grey percentage" value={greyPercentage} options={GREY_OPTIONS} onChange={(value) => setGuideInput("greyPercentage", value)} />
       <SelectField<HairLength> id="hair-length" label="Hair length" value={hairLength} options={LENGTH_OPTIONS} onChange={(value) => setGuideInput("hairLength", value)} />
       <SelectField<HairDensity> id="hair-density" label="Hair density" value={hairDensity} options={DENSITY_OPTIONS} onChange={(value) => setGuideInput("hairDensity", value)} />
     </div>
-    <dl className="input-summary" aria-label="Current guide input summary">
-      <div><dt>History</dt><dd>{HAIR_HISTORY_OPTIONS.find((option) => option.value === hairHistory)?.label}</dd></div>
-      <div><dt>Grey</dt><dd>{GREY_OPTIONS.find((option) => option.value === greyPercentage)?.label}</dd></div>
-      <div><dt>Length</dt><dd>{LENGTH_OPTIONS.find((option) => option.value === hairLength)?.label}</dd></div>
-      <div><dt>Density</dt><dd>{DENSITY_OPTIONS.find((option) => option.value === hairDensity)?.label}</dd></div>
-    </dl>
-    <p className="small-note">Length, density and grey percentage provide context only. No chemical amounts or coverage formulas are calculated.</p>
   </section>;
 }

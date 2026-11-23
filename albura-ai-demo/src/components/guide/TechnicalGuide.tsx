@@ -1,47 +1,49 @@
 "use client";
 
-import { BookOpen, Printer } from "lucide-react";
+import { BookOpen, Check, Download, FileCheck2, ImageIcon, Printer, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { HairLevelSelector } from "@/components/guide/HairLevelSelector";
 import { GuideInputs } from "@/components/guide/GuideInputs";
 import { PigmentChart } from "@/components/guide/PigmentChart";
-import { SafetyWarnings } from "@/components/guide/SafetyWarnings";
 import { useTryOn } from "@/components/try-on/TryOnProvider";
-import { formatLift, reflectionNotation } from "@/lib/guide/guide-reference";
+import { formatLift, reflectionNotation, HAIR_LEVELS } from "@/lib/guide/guide-reference";
+import { consultationNotes } from "@/lib/guide/consultation";
 
 export function TechnicalGuide() {
-  const { selectedShade: shade, naturalLevel, targetLevel, liftDifference, guideResult } = useTryOn();
-  const steps = [
-    { title: "Safety assessment", description: "Review hair/scalp condition with a professional. Remember patch and strand testing according to the official product instructions.", status: "Safety reminder" },
-    { title: "Review the level difference", description: `${guideResult.classification}. This software category flags a discussion about lift or pre-lightening; it does not authorize a treatment.`, status: "Demo assessment" },
-    { title: "Review pigment & reflection", description: `Compare the educational pigment chart with the selected shade reflection: ${reflectionNotation(shade)}. This is a reference, not a correction formula.`, status: "Educational reference" },
-    { title: "Refer to approved formulation", description: "Use the official Al Bura product leaflet and a formulation approved by the technical team and a qualified professional. Chemical instructions are not supplied here.", status: "Locked · approval required" },
-    { title: "Discuss after-care", description: "Ask a professional about after-care suitable for your hair condition, history and the product used. Refer to the official product leaflet.", status: "Professional consultation" },
-  ];
-  return <Card className="guide-card" id="technical-guide" aria-labelledby="guide-title">
-    <div className="card-heading"><div><p className="eyebrow">WINDOW 2</p><h2 id="guide-title">The technical guide</h2></div><BookOpen size={25} strokeWidth={1.25} aria-hidden="true" /></div>
-    <div className="guide-demo-notice"><strong>Unapproved demonstration</strong><span>Educational assessment only · no chemical treatment instructions</span></div>
-    <div className="guide-shade-heading"><span className="guide-shade-swatch" style={{ backgroundColor: shade.hex }} aria-hidden="true" /><div><p className="eyebrow">SELECTED DEMO SHADE</p><h3>{shade.name}</h3><p>{shade.code} · {shade.hex}</p></div></div>
-    <p className="small-note">Illustrative sample shade values, pending official Al Bura shade-card approval.</p>
-    <dl className="guide-shade-details">
-      <div><dt>Target level</dt><dd>{targetLevel}</dd></div><div><dt>Natural level</dt><dd>{naturalLevel} · manual</dd></div>
-      <div><dt>Reflection</dt><dd>{reflectionNotation(shade)}</dd></div><div><dt>Colour family</dt><dd className="family-name">{shade.family}</dd></div>
-      <div><dt>Required lift difference</dt><dd>{formatLift(liftDifference)}</dd></div>
-    </dl>
+  const state = useTryOn();
+  const { selectedShade: shade, naturalLevel, targetLevel, liftDifference, guideResult, photoAnalysis, analysisPending, levelConfirmed, confirmLevel, serverStatus } = state;
+  const notes = consultationNotes(state, guideResult);
+  function downloadSummary() {
+    const blob = new Blob([JSON.stringify({ title: "Al Bura consultation summary", status: "prototype_unapproved", dataVersion: state.dataVersion, assessmentSource: state.serverStatus === "ready" ? "server-checked" : "local-preview",
+      shade: { code: shade.code, name: shade.name, level: shade.level, reflection: shade.reflection },
+      startingLevel: naturalLevel, startingLevelSource: state.levelSource, levelConfirmed,
+      photoEstimate: photoAnalysis, hairProfile: { history: state.hairHistory, grey: state.greyPercentage, length: state.hairLength, density: state.hairDensity },
+      assessment: guideResult.classification, levelDifference: liftDifference, notes,
+      notice: "A discussion summary, not chemical application instructions. Follow approved product instructions and professional advice." }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `albura-consultation-${shade.code}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  return <Card className="guide-card consultation-card" id="technical-guide" aria-labelledby="guide-title">
+    <div className="card-heading"><div><p className="eyebrow">WINDOW 2 · YOUR COLOUR PLAN</p><h2 id="guide-title">Colour consultation</h2></div><BookOpen size={25} strokeWidth={1.25} aria-hidden="true" /></div>
+    <p className="consultation-intro">Your photo suggests a starting level. Confirm it, then explore what your chosen shade means for your colour journey.</p>
+    <div className={`photo-handoff ${photoAnalysis ? "has-analysis" : ""}`} role="status" aria-live="polite">
+      <ImageIcon size={21} aria-hidden="true" /><div><strong>{analysisPending ? "Analysing your original hair…" : photoAnalysis ? `${photoAnalysis.source === "camera" ? "Camera photo" : "Uploaded photo"} connected` : "Start with your photo"}</strong>
+      <p>{analysisPending ? "Your starting-level estimate will appear here." : photoAnalysis ? `${photoAnalysis.width} × ${photoAnalysis.height} · Photo estimate: level ${photoAnalysis.estimatedLevel}${photoAnalysis.lighting !== "normal" ? ` · ${photoAnalysis.lighting === "dim" ? "Low" : "Very bright"} lighting — check the estimate carefully` : ""}` : "Upload or capture a photo in Window 1, or select your starting level below."}</p></div>
+    </div>
+    <div className="consultation-target"><span style={{ backgroundColor: shade.hex }} aria-hidden="true" /><div><span className="eyebrow">YOUR SELECTED SHADE</span><h3>{shade.name}</h3><p>{shade.code} · {reflectionNotation(shade)}</p></div><span className="consultation-sample">Demo shade</span></div>
+    <div className="consultation-depth" aria-label="Starting and target hair depths"><div><span>Starting level</span><strong>{naturalLevel}</strong><small>{levelConfirmed ? "Confirmed by you" : "Confirm below"}</small></div><div><span>Target level</span><strong>{targetLevel}</strong><small>{shade.name}</small></div><div><span>Level difference</span><strong>{formatLift(liftDifference)}</strong><small>{liftDifference > 0 ? "Lighter target" : liftDifference < 0 ? "Darker target" : "Same depth"}</small></div></div>
     <HairLevelSelector />
+    {!levelConfirmed && <Button className="confirm-level" onClick={confirmLevel} disabled={analysisPending}><Check size={17} aria-hidden="true" /> Confirm starting level {naturalLevel}</Button>}
+    <section className="consultation-assessment" aria-labelledby="assessment-title" aria-live="polite" aria-atomic="true">
+      <div className="assessment-status"><FileCheck2 size={18} aria-hidden="true" /><span>{levelConfirmed ? "Your consultation overview" : "Preview · confirm your starting level"}</span></div>
+      <h3 id="assessment-title">{guideResult.classification}</h3><p>{notes.reason}</p>
+    </section>
     <GuideInputs />
-    <section className="lift-assessment guide-section" aria-labelledby="assessment-title" aria-live="polite" aria-atomic="true">
-      <p className="eyebrow">DEMO LIFT ASSESSMENT</p><div className="assessment-heading"><h3 id="assessment-title">{guideResult.classification}</h3><strong className="lift-value" aria-label={`Lift difference ${formatLift(liftDifference)}`}>{formatLift(liftDifference)}</strong></div>
-      <p>Target level {targetLevel} − natural level {naturalLevel} = {formatLift(liftDifference)}.</p>
-      <p className="small-note">A level difference is a software comparison, not a verified measure of achievable lift. Approval status: <strong>demo_unapproved</strong>.</p>
-    </section>
-    <PigmentChart />
-    <section className="guide-section" aria-labelledby="timeline-title"><h3 id="timeline-title">Your review pathway</h3><p className="small-note">Discussion checkpoints, not an executable chemical procedure.</p>
-      <ol className="guide-timeline" start={0}>{steps.map((step, index) => <li key={step.title}><span className="timeline-number" aria-hidden="true">{index}</span><article><span className="timeline-status">{step.status}</span><h4>{step.title}</h4><p>{step.description}</p></article></li>)}</ol>
-    </section>
-    <SafetyWarnings />
-    <div className="guide-print-actions"><Button variant="secondary" onClick={() => window.print()}><Printer size={16} aria-hidden="true" /> Print demo guide</Button><p className="small-note">Prints this assessment with its unapproved-demo notice and safety limits. No photo is included.</p></div>
-    <p className="print-only print-disclaimer">Al Bura Cosmetics · Unapproved demonstration guide · Not a chemical treatment procedure. Follow official product instructions and seek qualified professional assessment.</p>
+    <div className="consultation-notes" aria-live="polite"><h3>What to discuss with your stylist</h3><ul><li>{notes.historyNote}</li><li>{notes.coverageNote}</li><li>{notes.serviceNote}</li></ul></div>
+    <details className="consultation-reference"><summary>Colour theory & technical approval</summary><PigmentChart /><div className="consultation-safety"><ShieldCheck size={20} aria-hidden="true" /><div><strong>Professional review comes first</strong><p>Follow the product leaflet, patch and strand testing guidance, and your stylist’s advice. Approved Al Bura shade data and formulation rules are required before developer strengths, quantities or processing timers can be offered.</p></div></div></details>
+    <div className="consultation-approval"><ShieldCheck size={17} aria-hidden="true" /><p>Interview prototype · illustrative shades and an approximate photo estimate. This consultation is a discussion aid; chemical formulas require Al Bura technical approval.</p></div>
+    <div className="consultation-actions"><Button variant="secondary" onClick={() => window.print()} disabled={!levelConfirmed}><Printer size={16} aria-hidden="true" /> Print / Save PDF</Button><Button variant="secondary" onClick={downloadSummary} disabled={!levelConfirmed}><Download size={16} aria-hidden="true" /> Save summary</Button></div>
+    <p className="consultation-service" role="status">{serverStatus === "ready" ? "Consultation checked by the guide service" : serverStatus === "checking" ? "Updating your consultation…" : "Local consultation preview · guide service unavailable"}</p>
+    <p className="print-only print-disclaimer">Starting hair: level {naturalLevel}, {HAIR_LEVELS[naturalLevel - 1].name}. {notes.profile}. Al Bura Cosmetics · Prototype consultation, not chemical application instructions. Follow approved product instructions and seek qualified professional advice.</p>
   </Card>;
 }

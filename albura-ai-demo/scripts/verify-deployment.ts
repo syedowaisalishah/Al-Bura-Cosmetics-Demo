@@ -1,4 +1,4 @@
-/** Check the exact static output Vercel serves, after a successful Next.js build. */
+/** Verify the full-stack Next.js build and self-hosted browser AI assets. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
@@ -7,28 +7,27 @@ import { fileURLToPath } from "node:url";
 import { MODEL_ARTIFACTS, verifyModel } from "./model-artifact.ts";
 
 const project = fileURLToPath(new URL("../", import.meta.url));
-const output = resolve(project, "out");
+const output = resolve(project, "public");
 const configuration = JSON.parse(await readFile(join(project, "vercel.json"), "utf8"));
-assert.equal(configuration.framework, null, "Use Vercel's Other preset for this static export.");
-assert.equal(configuration.outputDirectory, "out", "Vercel must serve the Next.js export directory.");
+assert.equal(configuration.framework, "nextjs", "Vercel must use the Next.js framework for API routes.");
+assert.equal(configuration.outputDirectory, ".next", "The full-stack deployment must use .next rather than the old static out directory.");
 assert.equal(configuration.buildCommand, "npm run build");
 
 async function asset(path: string) {
   const file = resolve(output, path);
-  assert.ok(file.startsWith(output + sep), "Deployment asset must stay inside out/.");
+  assert.ok(file.startsWith(output + sep), "Deployment asset must stay inside public/.");
   assert.ok((await stat(file)).isFile(), `Missing exported asset: ${path}`);
   const bytes = await readFile(file);
   assert.ok(bytes.length > 0, `Empty exported asset: ${path}`);
   return bytes;
 }
 
-for (const page of ["index.html", "try-on/index.html", "404.html"]) {
-  const html = (await asset(page)).toString("utf8");
-  assert.match(html, /<html\b/i, `Invalid exported page: ${page}`);
-  for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
-    const path = match[1].split(/[?#]/)[0];
-    if (path.startsWith("/_next/") || path === "/icon.svg") await asset(path.slice(1));
-  }
+const next = join(project, ".next");
+assert.ok((await readFile(join(next, "BUILD_ID"), "utf8")).trim(), "Missing production build ID.");
+const routes = JSON.parse(await readFile(join(next, "server/app-paths-manifest.json"), "utf8"));
+for (const route of ["/page", "/try-on/page", "/api/shades/route", "/api/guide/calc/route", "/api/health/route"]) {
+  assert.ok(routes[route], `Missing route: ${route}`);
+  assert.ok((await stat(join(next, "server", routes[route]))).isFile(), `Missing built handler: ${route}`);
 }
 
 for (const model of MODEL_ARTIFACTS) {
@@ -56,4 +55,4 @@ async function inspect(directory: string) {
   }
 }
 await inspect(output);
-console.log(`Deployment output verified: ${files} files; pages, 2 models, 2 workers and ${runtimeFiles.length} matching SDK runtime assets. No private env/source directories.`);
+console.log(`Next.js deployment verified: 2 pages, 3 API handlers; ${files} public assets including 2 models, 2 workers and ${runtimeFiles.length} matching SDK runtime files. No private env/source directories in public/.`);

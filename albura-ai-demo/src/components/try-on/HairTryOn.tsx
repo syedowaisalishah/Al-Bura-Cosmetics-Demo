@@ -14,6 +14,7 @@ import { segmentHair } from "@/lib/ai/hair-segmentation";
 import { createMaskOverlay, refineHairMask } from "@/lib/ai/mask-utils";
 import { prepareHairColor, recolorHair, type HairColorCache } from "@/lib/ai/hair-recolor";
 import { pixelsToUrl, preparePhoto, validatePhoto, type PreparedPhoto } from "@/lib/ai/photo-utils";
+import { analysePhoto } from "@/lib/ai/photo-analysis";
 import type { TryOnStatus } from "@/types/try-on";
 
 const DEBUG_MASK = process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_ENABLE_MASK_DEBUG === "true";
@@ -25,7 +26,7 @@ const messages: Record<TryOnStatus, string> = {
 };
 
 export function HairTryOn({ active = true }: { active?: boolean }) {
-  const { selectedShade: selected } = useTryOn();
+  const { selectedShade: selected, beginAnalysis, clearAnalysis, publishAnalysis, photoAnalysis } = useTryOn();
   const [status, setStatus] = useState<TryOnStatus>("idle");
   const [mode, setMode] = useState<"photo" | "live" | "camera">("photo");
   const [photoSource, setPhotoSource] = useState<"upload" | "camera" | null>(null);
@@ -49,6 +50,7 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
     urls.current.set(kind, url); return url;
   }
   function invalidate() {
+    clearAnalysis();
     photoJob.current++; photoAbort.current?.abort(); renderAbort.current?.abort();
     for (const url of urls.current.values()) URL.revokeObjectURL(url);
     urls.current.clear(); photo.current = null; cache.current = null;
@@ -66,7 +68,8 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
     };
   }, []);
 
-  async function analyze(prepared: PreparedPhoto, job: number) {
+  async function analyze(prepared: PreparedPhoto, job: number, source: "upload" | "camera" = photoSource ?? "upload") {
+    beginAnalysis();
     const controller = new AbortController(); photoAbort.current = controller;
     const current = () => job === photoJob.current && !controller.signal.aborted;
     try {
@@ -86,10 +89,11 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
         if (!current()) { URL.revokeObjectURL(url); return; }
         setMaskUrl(ownUrl("mask", url));
       }
+      publishAnalysis(analysePhoto(preparedCache, source));
       cache.current = preparedCache; setCacheVersion((v) => v + 1);
     } catch (cause) {
       if (!current()) return;
-      setStatus("error");
+      clearAnalysis(); setStatus("error");
       setError(cause instanceof Error ? cause.message : "Hair analysis failed. Please try again.");
     }
   }
@@ -104,7 +108,7 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
       photo.current = prepared;
       setOriginalUrl(ownUrl("original", prepared.previewUrl));
       setDimensions({ width: prepared.pixels.width, height: prepared.pixels.height });
-      await analyze(prepared, job);
+      await analyze(prepared, job, source);
     } catch (cause) {
       if (job !== photoJob.current) return;
       setStatus("error"); setError(cause instanceof Error ? cause.message : "This photo could not be opened.");
@@ -168,6 +172,7 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
         {error && <div className="tryon-error" role="alert"><AlertCircle size={19} aria-hidden="true" /><div><p>{error}</p>{originalUrl && !busy && <Button variant="secondary" onClick={() => { setError(null); if (cache.current) setCacheVersion((v) => v + 1); else if (photo.current) void analyze(photo.current, photoJob.current); }}>Retry preview</Button>}</div></div>}
         {originalUrl && <><p className="photo-source">{photoSource === "camera" ? "Captured photo" : "Uploaded photo"} · before and after</p><BeforeAfterSlider key={originalUrl} originalUrl={originalUrl} resultUrl={resultUrl} width={dimensions.width} height={dimensions.height} debugUrl={showMask ? maskUrl : null} /></>}
         {DEBUG_MASK && maskUrl && <label className="debug-toggle"><input type="checkbox" checked={showMask} onChange={(event) => setShowMask(event.target.checked)} /> Show AI hair mask (development)</label>}
+        {photoAnalysis && <a className="photo-consultation-link" href="#technical-guide">Photo estimate: level {photoAnalysis.estimatedLevel}. Confirm your starting level in Window 2.</a>}
         {originalUrl && <div className="download-row"><Button onClick={download} disabled={displayStatus !== "ready" || !resultUrl}><Download size={17} aria-hidden="true" /> Download Result</Button><a className="button button-secondary" href="#palette-title">Change Shade</a><span className="small-note">{dimensions.width} × {dimensions.height} px · PNG</span></div>}
         {originalUrl && mode === "camera" && <Button className="reset-result" variant="secondary" onClick={reset}><RotateCcw size={16} aria-hidden="true" /> Reset</Button>}
         </div>

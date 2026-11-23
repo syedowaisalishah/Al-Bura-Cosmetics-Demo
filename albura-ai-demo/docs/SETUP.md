@@ -1,4 +1,13 @@
-# Local setup and configuration
+# Current setup
+
+Follow the app [README](../README.md) for the current full-stack version. Use
+Node 22.x, `npm ci`, `npm run dev`, or `npm run deploy:check` and `npm start`.
+Vercel uses the **Next.js** preset and `.next` output; the old `out` instructions
+below are historical. Window 2 now receives a photo-based starting-level
+estimate, requires confirmation and uses the validated guide endpoint.
+
+## Historical setup record
+
 
 Verified on 2026-11-22 (Asia/Karachi): Ubuntu 26.04 LTS, Node 22.22.1, npm 9.2.0,
 Git 2.53.0, Chrome 151. Next.js 16.4.6, React 19.3.0, TypeScript 5.9.3,

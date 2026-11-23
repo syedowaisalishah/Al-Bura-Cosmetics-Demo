@@ -5,7 +5,7 @@ export type GreyPercentage = "none" | "below-50" | "above-50";
 export type HairLength = "short" | "shoulder" | "long" | "extra-long";
 export type HairDensity = "fine" | "medium" | "thick";
 
-/** Manual inputs only. Neither hair level nor history is inferred from a photo. */
+/** Starting level may be suggested from original hair pixels; user confirmation is required. History stays manual. */
 export interface GuideInput {
   selectedShade: Shade;
   naturalLevel: number;

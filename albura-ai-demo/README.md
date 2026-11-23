@@ -1,145 +1,103 @@
-# Al Bura Cosmetics — AI Hair Colour Try-On Demo
+# Al Bura Cosmetics · Colour Studio
 
-A browser-only cosmetics demonstration with three modes: Upload Photo, Live AI
-Camera (Experimental), and Take Photo (recommended). Try twelve illustrative
-hair shades and review a synchronized educational colour guide. Uploaded and
-captured photos support before/after comparison and PNG download. Images and
-video stay on the device.
+An interview prototype of the Al Bura brief: real browser AI hair recolouring,
+three photo/camera modes, and a connected colour consultation backed by Next.js
+route handlers. **Window 2 now receives an approximate starting level from the
+original hair pixels in Window 1, asks for confirmation, and recalculates for the
+selected shade and hair profile.**
 
-## Technologies
+## Run
 
-Next.js 16.4.6 App Router, React 19.3, TypeScript, Tailwind CSS 4, Canvas 2D and
-MediaPipe Tasks Vision 1.2.3. The two existing official Google models run locally
-in separate IMAGE and VIDEO workers. CIELAB recolouring preserves strand contrast, limits
-saturation and protects bright reflections. There is no paid API, inference
-server or database. This is a demo, not production-ready.
-
-## Install and run
-
-Use Node **22.x** (`.nvmrc` pins the tested local version).
+Node **22.x** is the tested deployment target.
 
 ```bash
 npm ci
 npm run dev
+# http://127.0.0.1:3000/try-on/
 ```
 
-Open http://127.0.0.1:3000/try-on/. Installation generates matching local WASM and
-worker assets; models are included in `public/models`. Upload Photo and Take
-Photo use the same cached still-image pipeline. Take Photo previews normal video
-without inference; the optional Live AI Camera mode runs continuous VIDEO
-segmentation and shows measured FPS. Both load AI only when needed.
-
-Live defaults to GPU acceleration with CPU fallback, preferring CPU when a known
-software GPU renderer is detected. Explicit CPU/GPU choices are available while
-stopped. Processing is limited to one frame at a time and adapts resolution on
-slow pixel processing. Live starts within 640 × 480 and has a Colour strength
-slider, with gentler lightening to keep dark hair from looking painted over. Take Photo preserves finer detail; live performance remains device
-dependent. See [live implementation and measurements](docs/LIVE_CAMERA_REPORT.md) and
-[the live colour correction](docs/LIVE_COLOUR_FIX.md).
-
-This workspace has a real Git-ignored `.env` (mode 600), with local public asset
-paths. No secret credentials are required; fresh clones work with defaults.
-There is no `.env.example`. Optional settings are listed in [SETUP](docs/SETUP.md).
-Never put secrets in `NEXT_PUBLIC_` variables or commit `.env`.
-
-## Check and build
+For the production server:
 
 ```bash
-npm test
-npm run typecheck
-npm run lint
-npm run model:verify
 npm run deploy:check
 npm start
+# PORT=3002 npm start for a different port
 ```
 
-`npm run deploy:check` runs TypeScript, ESLint, tests and the production build.
-`npm run build` generates matching WASM/worker assets, verifies both model
-artifacts and emits a static `out/` site. Its postbuild check verifies exported
-pages, referenced assets, exact model/runtime bytes and private-file exclusions.
-`npm start` serves that export at http://127.0.0.1:3000; use `PORT=3002 npm start`
-if development already uses that port. It is a local preview, not a backend.
+The build generates the two MediaPipe workers and matching WASM files. Both
+original official models are included. No AI key, paid API, database account or
+new dependency is required. A private local `.env` is ignored by Git; default
+asset paths work without it. Never place secrets in `NEXT_PUBLIC_` variables.
 
-## Deploy to Vercel
+## What to demonstrate
 
-**Deployment is prepared; no Vercel account/project credentials are configured in
-this workspace, and no Vercel deployment has been performed.**
+1. Upload a clear portrait. Real MediaPipe segmentation finds the hair locally;
+   the original mask and colour cache support fast shade changes.
+2. Window 2 changes to **Uploaded photo connected** and suggests a starting
+   depth using the median Lab lightness of the original hair region. The scale
+   is illustrative and not brand-calibrated: confirm or edit the estimate.
+3. Choose Burgundy, Copper and Ash Blonde using the quick palette. Both windows
+   share the selection. Compare before/after and download the processed PNG.
+4. Confirm the starting level. Change hair history, grey coverage, length and
+   density; the level assessment and consultation notes respond. Save a summary
+   or use **Print / Save PDF**. Formulas remain unapproved and are not supplied.
+5. Open Take Photo for normal video, capture, then reuse the still-image pipeline.
+   Experimental Live Preview supports continuous VIDEO inference, CPU/GPU
+   selection/fallback, measured FPS and a strength slider. Capture stays available.
+6. On mobile, switch between Try-On and Colour consultation. State persists;
+   hiding a camera pane releases the stream and live worker.
 
-Vercel Hobby is for personal, non-commercial use. A cosmetics-company pitch or
-client project may fall outside that scope. Confirm eligibility before using
-Hobby; this repository does not enable a paid plan, trial or add-on. See
-[Vercel fair-use rules](https://vercel.com/docs/limits/fair-use-guidelines).
+## Frontend and backend
 
-For eligible use:
+Next.js 16.4.6, React 19.3, TypeScript, Tailwind 4, Canvas and MediaPipe 1.2.3.
 
-1. Commit and push the completed source to your Git repository. Deploy the
-   current branch/commit, including the latest camera and hair-edge fixes.
-2. Sign in to Vercel, select **Add New → Project**, and import that repository.
-3. Set **Root Directory** to `albura-ai-demo` when importing the parent repository.
-   Use the app root directly if the app is its own repository.
-4. Select **Other** as Framework Preset, **Node.js 22.x**, Install Command
-   `npm ci --include=dev`, Build Command `npm run build`, and Output Directory
-   **`out`**. Build-time tools are development dependencies, so they must be
-   installed.
-   The app-root `vercel.json` sets the static build commands/output and
-   `framework: null`. Next.js still builds the app; Vercel serves its export.
-5. Add **no environment variables** for the default demo. Do not upload `.env`.
-   Do not configure server functions, storage, databases, analytics add-ons or
-   external AI. `.vercelignore` also excludes local private/build/test files.
-6. Deploy, then use the returned **HTTPS** address. Visit `/` and `/try-on/`,
-   upload a photo, choose a shade, check Download Result, and allow camera access
-   for Take Photo and Experimental Live Preview. On a phone, open the HTTPS
-   address in its own browser.
-7. In browser Network tools confirm successful `/workers/hair-segmenter.js`,
-   `/workers/live-hair-segmenter.js` (when live mode starts),
-   `/models/hair_segmenter.tflite`,
-   `/models/selfie_multiclass_256x256.tflite` and the matching `/wasm/` requests.
-   A missing file or HTML response for a model/WASM path indicates a wrong root,
-   output directory or skipped asset-sync step. Run `npm run assets:sync` and
-   rebuild; do not substitute masks or a fake preview.
+| Endpoint | Behaviour |
+| --- | --- |
+| `GET /api/shades/` | Twelve validated illustrative shades and data version |
+| `POST /api/guide/calc/` | Zod-validated profile, trusted shade lookup, level assessment and personalised notes |
+| `GET /api/health/` | Service health and prototype data version |
 
-Keep the export at the domain root: model/WASM/worker paths are absolute. Avoid
-an SPA rewrite that turns binary asset requests into HTML. The site uses no
-server routes. HTTPS/localhost is required for `getUserMedia`; HTTP LAN preview
-addresses cannot open a camera. In an iframe, the parent must also permit camera
-access; use the direct deployment URL for the company demo.
+The UI uses the guide endpoint and falls back to a clearly labelled local
+preview if it is unavailable. Stale requests are cancelled. **Only the shade ID
+and hair-profile selections reach the server; images and video do not.** The
+catalogue is versioned JSON, not a live database or an admin-managed collection.
 
-Quick settings:
+## Vercel — updated for the backend
 
-| Vercel setting | Value |
+The earlier static `out` deployment has been replaced by the standard Next.js
+server build so the API routes work.
+
+| Setting | Value |
 | --- | --- |
 | Root Directory | `albura-ai-demo` |
-| Framework Preset | Other |
-| Node.js Version | 22.x |
-| Install Command | `npm ci --include=dev` |
-| Build Command | `npm run build` |
-| Output Directory | `out` |
-| Environment Variables | None required |
+| Framework Preset | **Next.js** |
+| Node | 22.x |
+| Install | `npm ci --include=dev` |
+| Build | `npm run build` |
+| Output Directory | **`.next`** (configured in `vercel.json`) |
+| Environment variables | None required |
 
-If a project already exists, set the root under Project Settings → Build and
-Deployment, then redeploy the latest commit. Do not select `.next` as the output
-or add a catch-all HTML rewrite. For an optional future backend, change to the
-Next.js preset and remove static export/output overrides as a separate change.
+Import the GitHub repository and deploy the current commit. If you previously
+selected Other or `out`, the repository configuration now explicitly sets
+Next.js and `.next`; confirm the Root Directory before redeploying. Serve
+the site at the domain root over HTTPS for camera permissions. No cloud
+publication is claimed: this workspace has no linked Vercel project credentials.
+Choose hosting that permits the intended commercial/interview use.
 
-A [deployment readiness record](docs/VERCEL_READINESS.md) documents the clean
-installation and production build checks.
+References: [Vercel framework settings](https://vercel.com/docs/builds/configure-a-build),
+[Next.js on Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs).
 
-Settings references: [Vercel build configuration](https://vercel.com/docs/builds/configure-a-build),
-[vercel.json](https://vercel.com/docs/project-configuration/vercel-json),
-[Git import](https://vercel.com/docs/git).
+## Submission and scope
 
-## Demo and limits
+- [Interview walkthrough, scope review and test record](docs/INTERVIEW_SUBMISSION.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Photo edge correction](docs/EDGE_COVERAGE_FIX.md)
+- [Live colour correction](docs/LIVE_COLOUR_FIX.md)
+- [Earlier three-mode implementation](docs/LIVE_CAMERA_REPORT.md)
 
-- [Three-minute presentation script and walkthrough](docs/DEMO_GUIDE.md)
-- [Known limitations and production work](docs/KNOWN_LIMITATIONS.md)
-- [Phase 5 audit, changed files and final verification](docs/PHASE_5_REPORT.md)
-- [Architecture](docs/ARCHITECTURE.md) and [local configuration](docs/SETUP.md)
-- [Three-mode implementation, CPU/GPU measurements and tests](docs/LIVE_CAMERA_REPORT.md)
-- [Camera capture implementation history](docs/CAMERA_CAPTURE_REPORT.md)
-- [Official model provenance, hashes and licenses](public/models/README.md)
-
-Every shade is illustrative and pending official Al Bura approval. There is no
-official 180-shade palette. The guide is explicitly `demo_unapproved`; developer
-strengths, quantities, ratios, processing timers and bleach instructions remain
-locked. A visual preview does not predict actual dye outcomes. Segmentation can
-still fail on difficult edges, lighting, occlusion and backgrounds.
+The supplied PDF budgets **57 person-days / 5–7 weeks** for the full production
+system. The two-day prototype does not claim the approved 180-shade card,
+50-product catalogue, Postgres, authenticated admin, approved chemical rules,
+physical-device certification or guaranteed colour fidelity. Those need client
+data, technical sign-off and a production delivery phase. This demo demonstrates
+the end-to-end interaction and engineering foundation without inventing them.

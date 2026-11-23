@@ -1,6 +1,6 @@
-# Al Bura Cosmetics — AI Hair Colour Try-On Demo
+# Al Bura Cosmetics · AI Colour Studio
 
-The application lives in [albura-ai-demo](albura-ai-demo/README.md).
+The application is in [albura-ai-demo](albura-ai-demo/README.md).
 
 ```bash
 cd albura-ai-demo
@@ -8,21 +8,19 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3000/try-on/. Upload a portrait or capture a camera photo,
-choose one of twelve illustrative shades, compare and download the result, then
-review the synchronized educational guide. Experimental Live AI Camera is also
-available; Take Photo is recommended for finer detail. Processing stays local.
+A working interview prototype with real local MediaPipe hair recolouring,
+Upload Photo / Experimental Live / Take Photo, before/after and PNG download,
+and a photo-connected colour consultation with a validated Next.js backend.
+Photos and video stay in the browser.
 
-- [Installation, checks, build and exact Vercel deployment steps](albura-ai-demo/README.md)
-- [Clean-build deployment readiness](albura-ai-demo/docs/VERCEL_READINESS.md)
-- [Three-minute company demonstration](albura-ai-demo/docs/DEMO_GUIDE.md)
-- [Three-mode camera implementation and CPU/GPU tests](albura-ai-demo/docs/LIVE_CAMERA_REPORT.md)
-- [Phase 5 audit and test report](albura-ai-demo/docs/PHASE_5_REPORT.md)
-- [Known limitations and production work](albura-ai-demo/docs/KNOWN_LIMITATIONS.md)
+**Window 2:** photo analysis suggests a starting hair level; the user confirms it,
+chooses a shade and hair profile, then reviews and exports the consultation.
+This estimate is approximate; the prototype does not issue chemical formulas.
 
-Vercel deployment settings are configured in `albura-ai-demo/vercel.json`.
-Select root **`albura-ai-demo`**, framework **Other**, and output **`out`**.
-No live Vercel deployment is claimed. Hobby eligibility depends on
-personal non-commercial use; no paid services are enabled. The earlier private
-Sites deployment is historical and does not contain these verified local changes.
-A real Git-ignored `.env` is present locally; the demo needs no secret API key.
+- [Run and Vercel deployment instructions](albura-ai-demo/README.md)
+- [Interview walkthrough and scope review](albura-ai-demo/docs/INTERVIEW_SUBMISSION.md)
+
+Vercel now uses **Next.js**, root **albura-ai-demo**, and **`.next` output**.
+Remove the earlier Other / `out` settings so the backend routes run. No live
+cloud deployment is claimed. Official shade-card data, authenticated admin,
+database and approved formulations remain part of the larger production scope.
