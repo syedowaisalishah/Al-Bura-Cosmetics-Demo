@@ -14,7 +14,7 @@ console.log(`Copied ${files.length} matching MediaPipe runtime assets to public/
 const project = fileURLToPath(new URL("../", import.meta.url));
 await build({
   absWorkingDir: project,
-  entryPoints: { "hair-segmenter": "src/lib/ai/segmentation.worker.ts", "live-hair-segmenter": "src/lib/ai/live-segmentation.worker.ts" },
+  entryPoints: { "hair-segmenter": "src/web/ai/segmentation.worker.ts", "live-hair-segmenter": "src/web/ai/live-segmentation.worker.ts" },
   outdir: "public/workers", bundle: true,
   format: "iife", platform: "browser", target: "es2020", minify: true,
   // Runtime model paths are passed in the worker's initialization message.

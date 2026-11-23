@@ -6,6 +6,15 @@ preset and `.next` output. Node 22 is used for development/build and API routes.
 The original static-export implementation has been replaced; historical phase
 reports describe that earlier state.
 
+## Source organization
+
+`src/web` owns the screens, React UI, styles, browser camera and AI workers.
+`src/api` owns HTTP handlers, request schemas and backend services. `src/shared`
+holds catalogue data, types and pure rules used by both. Next.js entry files in
+`src/app` delegate to those modules; public routes and Vercel settings stay the
+same. See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the folder map and
+NestJS/Python tradeoffs.
+
 ## Browser: vision and interaction
 
 ```mermaid
@@ -67,7 +76,7 @@ flowchart TD
 The assessment endpoint accepts bounded JSON profile metadata. It rejects
 unknown fields and invalid levels/options. It does not accept images or output
 chemical formulas. Responses are not cached. The demo catalogue is validated
-from `src/data/demo-shades.json`; no database or administration service is claimed.
+from `src/shared/data/demo-shades.json`; no database or administration service is claimed.
 
 ## Presentation
 

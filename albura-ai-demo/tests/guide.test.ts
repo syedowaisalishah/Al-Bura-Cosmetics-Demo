@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { generateTechnicalGuide } from "../src/lib/guide/guide-rules.ts";
-import { HAIR_LEVELS, formatLift, reflectionNotation } from "../src/lib/guide/guide-reference.ts";
-import { demoShades } from "../src/data/shades.ts";
-import type { GuideInput, HairHistory } from "../src/types/guide.ts";
+import { generateTechnicalGuide } from "../src/shared/guide/guide-rules.ts";
+import { HAIR_LEVELS, formatLift, reflectionNotation } from "../src/shared/guide/guide-reference.ts";
+import { demoShades } from "../src/shared/data/shades.ts";
+import type { GuideInput, HairHistory } from "../src/shared/types/guide.ts";
 
 const input = (naturalLevel: number, targetLevel: number, hairHistory: HairHistory = "virgin"): GuideInput => ({
   naturalLevel, selectedShade: { ...demoShades[0], level: targetLevel }, hairHistory,

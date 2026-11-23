@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { hexToRgb, labToRgb, rgbToLab } from "../src/lib/color/color-utils.ts";
-import { combineHairConfidence, combinePhotoHairConfidence, refineHairMask, resizeConfidenceMask, skinExclusion } from "../src/lib/ai/mask-utils.ts";
-import { prepareHairColor, recolorHair } from "../src/lib/ai/hair-recolor.ts";
-import { validatePhoto } from "../src/lib/ai/photo-utils.ts";
-import type { Shade } from "../src/types/shade.ts";
+import { hexToRgb, labToRgb, rgbToLab } from "../src/web/lib/color/color-utils.ts";
+import { combineHairConfidence, combinePhotoHairConfidence, refineHairMask, resizeConfidenceMask, skinExclusion } from "../src/web/ai/mask-utils.ts";
+import { prepareHairColor, recolorHair } from "../src/web/ai/hair-recolor.ts";
+import { validatePhoto } from "../src/web/ai/photo-utils.ts";
+import type { Shade } from "../src/shared/types/shade.ts";
 
 // A data-only ImageData polyfill for pure pixel math; browser inference is tested separately.
 class PixelData {
@@ -87,7 +87,7 @@ test("upload rejects unsupported, empty, and oversized files", () => {
 });
 
 test("gamut mapping preserves lightness and hue for colours beyond sRGB", async () => {
-  const { gamutMapLabToRgb } = await import("../src/lib/color/color-utils.ts");
+  const { gamutMapLabToRgb } = await import("../src/web/lib/color/color-utils.ts");
   for (const lab of [{ l: 35, a: 100, b: 70 }, { l: 80, a: -80, b: 90 }, { l: 50, a: 80, b: -100 }]) {
     const rgb = gamutMapLabToRgb(lab), actual = rgbToLab(rgb);
     assert.ok(Math.abs(actual.l - lab.l) < .01, "Fitting colour gamut must preserve lightness");

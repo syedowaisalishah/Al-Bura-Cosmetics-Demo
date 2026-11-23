@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { demoShades } from "../src/data/shades.ts";
-import { filterShades } from "../src/lib/color/shade-filter.ts";
+import { demoShades } from "../src/shared/data/shades.ts";
+import { filterShades } from "../src/web/lib/color/shade-filter.ts";
 
 test("all twelve illustrative shades have unique codes and complete validated metadata", () => {
   assert.equal(demoShades.length, 12);

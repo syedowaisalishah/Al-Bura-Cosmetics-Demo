@@ -47,6 +47,16 @@ asset paths work without it. Never place secrets in `NEXT_PUBLIC_` variables.
 6. On mobile, switch between Try-On and Colour consultation. State persists;
    hiding a camera pane releases the stream and live worker.
 
+## Source folders
+
+- `src/web/`: screens, React components, styles, camera and on-device AI.
+- `src/api/`: backend request handlers, validation schemas and services.
+- `src/shared/`: catalogue data, types and pure consultation rules.
+- `src/app/`: thin Next.js page/layout and HTTP route entry files.
+
+See [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for the complete tree,
+import boundaries and when a separate NestJS or Python service would help.
+
 ## Frontend and backend
 
 Next.js 16.4.6, React 19.3, TypeScript, Tailwind 4, Canvas and MediaPipe 1.2.3.

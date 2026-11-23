@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ImageSegmenter } from "@mediapipe/tasks-vision";
-import { segmentWithModel } from "../src/lib/ai/hair-segmentation.ts";
-import { liveDimensions, LiveMaskSmoother, LiveQuality } from "../src/lib/ai/live-utils.ts";
+import { segmentWithModel } from "../src/web/ai/hair-segmentation.ts";
+import { liveDimensions, LiveMaskSmoother, LiveQuality } from "../src/web/ai/live-utils.ts";
 
 test("VIDEO extraction copies callback masks before native memory expires and passes milliseconds", () => {
   const probability = new Float32Array([.9, .2]);

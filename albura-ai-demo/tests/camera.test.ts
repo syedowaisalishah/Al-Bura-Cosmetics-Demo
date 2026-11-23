@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cameraErrorMessage, captureVideoPhoto, stopCameraTracks } from "../src/lib/camera.ts";
-import { segmentWithModel } from "../src/lib/ai/hair-segmentation.ts";
+import { cameraErrorMessage, captureVideoPhoto, stopCameraTracks } from "../src/web/lib/camera.ts";
+import { segmentWithModel } from "../src/web/ai/hair-segmentation.ts";
 import type { ImageSegmenter } from "@mediapipe/tasks-vision";
 
 test("camera errors distinguish permission, missing hardware and device failures", () => {

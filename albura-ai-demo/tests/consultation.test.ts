@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { analysePhoto } from "../src/lib/ai/photo-analysis.ts";
-import { calculateGuide } from "../src/lib/server/guide-api.ts";
+import { analysePhoto } from "../src/web/ai/photo-analysis.ts";
+import { calculateGuide } from "../src/api/services/guide-service.ts";
 import { POST } from "../src/app/api/guide/calc/route.ts";
-import type { HairColorCache } from "../src/lib/ai/hair-recolor.ts";
+import type { HairColorCache } from "../src/web/ai/hair-recolor.ts";
 
 function cache(lightness: number, brightness = 120): HairColorCache {
   const data = new Uint8ClampedArray(160).fill(brightness); for (let i = 3; i < 160; i += 4) data[i] = 255;
