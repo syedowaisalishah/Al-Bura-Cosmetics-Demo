@@ -2,18 +2,18 @@ import type { RefinedHairMask } from "@/lib/ai/mask-utils";
 import type { HairColorCache } from "@/lib/ai/hair-recolor";
 
 export const LIVE_INTERVAL_MS = 125; // Maximum 8 analyses/s; actual throughput is measured.
-export function liveDimensions(width: number, height: number, limit = 320) {
+export function liveDimensions(width: number, height: number, limit = 640) {
   if (![width, height, limit].every((v) => Number.isFinite(v) && v > 0)) throw new Error("The camera returned invalid dimensions.");
   const scale = Math.min(1, limit / width, limit * .75 / height);
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 export class LiveQuality {
-  limit = 320;
+  limit = 640;
   private slow = 0;
   // Caller supplies pixel/transfer duration, excluding fixed-size model inference.
   record(ms: number) {
     this.slow = ms > 180 ? this.slow + 1 : 0;
-    if (this.slow >= 3) { this.limit = this.limit === 320 ? 256 : 192; this.slow = 0; }
+    if (this.slow >= 3) { this.limit = this.limit === 640 ? 480 : 320; this.slow = 0; }
   }
 }
 

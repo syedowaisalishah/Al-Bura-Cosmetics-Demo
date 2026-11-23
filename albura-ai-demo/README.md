@@ -32,8 +32,10 @@ segmentation and shows measured FPS. Both load AI only when needed.
 Live defaults to GPU acceleration with CPU fallback, preferring CPU when a known
 software GPU renderer is detected. Explicit CPU/GPU choices are available while
 stopped. Processing is limited to one frame at a time and adapts resolution on
-slow pixel processing. Take Photo preserves finer detail; live performance remains device
-dependent. See [live implementation and measurements](docs/LIVE_CAMERA_REPORT.md).
+slow pixel processing. Live starts within 640 × 480 and has a Colour strength
+slider, with gentler lightening to keep dark hair from looking painted over. Take Photo preserves finer detail; live performance remains device
+dependent. See [live implementation and measurements](docs/LIVE_CAMERA_REPORT.md) and
+[the live colour correction](docs/LIVE_COLOUR_FIX.md).
 
 This workspace has a real Git-ignored `.env` (mode 600), with local public asset
 paths. No secret credentials are required; fresh clones work with defaults.

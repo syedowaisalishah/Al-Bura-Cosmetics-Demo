@@ -5,7 +5,7 @@ import type { LiveDelegate, LiveFrame, LivePreference, LiveRequest, LiveResponse
 export interface LiveClient {
   delegate: LiveDelegate;
   fallbackReason: string | null;
-  processFrame(source: HTMLCanvasElement, timestampMs: number, shade: Shade): Promise<LiveFrame>;
+  processFrame(source: HTMLCanvasElement, timestampMs: number, shade: Shade, intensity?: number): Promise<LiveFrame>;
   close(): void;
 }
 function connectLive(delegate: LiveDelegate, signal?: AbortSignal, allowSoftwareGpu = true): Promise<LiveClient> {
@@ -24,7 +24,7 @@ function connectLive(delegate: LiveDelegate, signal?: AbortSignal, allowSoftware
     const abort = () => close();
     const client: LiveClient = {
       delegate, fallbackReason: null, close: () => close(),
-      async processFrame(source, timestampMs, shade) {
+      async processFrame(source, timestampMs, shade, intensity = .7) {
         if (closed) throw new Error("The live model is closed.");
         if (inFlight) throw new Error("A live frame is already processing.");
         inFlight = true;
@@ -34,7 +34,7 @@ function connectLive(delegate: LiveDelegate, signal?: AbortSignal, allowSoftware
           return await new Promise<LiveFrame>((resolveFrame, rejectFrame) => {
             const requestId = ++id, timer = setTimeout(() => close(new Error("Live analysis timed out. Use Take Photo for a stable result.")), 15000);
             pending.set(requestId, { resolve: resolveFrame, reject: rejectFrame, timer });
-            try { worker.postMessage({ type: "frame", id: requestId, image, timestampMs, shade } satisfies LiveRequest, [image]); }
+            try { worker.postMessage({ type: "frame", id: requestId, image, timestampMs, shade, intensity } satisfies LiveRequest, [image]); }
             catch (cause) { image.close(); clearTimeout(timer); pending.delete(requestId); rejectFrame(cause); }
           });
         } finally { inFlight = false; }
@@ -70,19 +70,19 @@ export async function createLiveClient(preference: LivePreference = "auto", sign
     get delegate() { return current.delegate; },
     get fallbackReason() { return fallbackReason; },
     close() { closed = true; current.close(); },
-    async processFrame(source, timestampMs, shade) {
+    async processFrame(source, timestampMs, shade, intensity = .7) {
       if (processing) throw new Error("A live frame is already processing.");
       if (closed) throw new Error("The live model is closed.");
       processing = true;
       try {
-        try { return await current.processFrame(source, timestampMs, shade); }
+        try { return await current.processFrame(source, timestampMs, shade, intensity); }
         catch (cause) {
           if (closed || signal?.aborted || preference !== "auto" || current.delegate !== "GPU") throw cause;
           current.close();
           current = await connectLive("CPU", signal);
           if (closed || signal?.aborted) { current.close(); throw new Error("Live analysis was cancelled."); }
           fallbackReason = "GPU processing stopped. Switched to CPU; Take Photo is recommended for a stable result.";
-          return await current.processFrame(source, timestampMs, shade);
+          return await current.processFrame(source, timestampMs, shade, intensity);
         }
       } finally { processing = false; }
     },

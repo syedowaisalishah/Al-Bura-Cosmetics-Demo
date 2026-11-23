@@ -20,8 +20,8 @@ test("VIDEO extraction copies callback masks before native memory expires and pa
 });
 
 test("live downscaling preserves portrait/landscape geometry without enlarging the camera", () => {
-  assert.deepEqual(liveDimensions(1280, 960), { width: 320, height: 240 });
-  assert.deepEqual(liveDimensions(960, 1280), { width: 180, height: 240 });
+  assert.deepEqual(liveDimensions(1280, 960), { width: 640, height: 480 });
+  assert.deepEqual(liveDimensions(960, 1280), { width: 360, height: 480 });
   assert.deepEqual(liveDimensions(160, 90), { width: 160, height: 90 });
   assert.deepEqual(liveDimensions(1280, 720, 192), { width: 192, height: 108 });
   assert.throws(() => liveDimensions(0, 720), /dimensions/);
@@ -29,10 +29,10 @@ test("live downscaling preserves portrait/landscape geometry without enlarging t
 
 test("quality backs off only after sustained slow frames and never oscillates up", () => {
   const quality = new LiveQuality();
-  quality.record(200); quality.record(200); quality.record(100); assert.equal(quality.limit, 320);
-  for (let i = 0; i < 3; i++) quality.record(200); assert.equal(quality.limit, 256);
-  for (let i = 0; i < 3; i++) quality.record(200); assert.equal(quality.limit, 192);
-  for (let i = 0; i < 20; i++) quality.record(10); assert.equal(quality.limit, 192);
+  quality.record(200); quality.record(200); quality.record(100); assert.equal(quality.limit, 640);
+  for (let i = 0; i < 3; i++) quality.record(200); assert.equal(quality.limit, 480);
+  for (let i = 0; i < 3; i++) quality.record(200); assert.equal(quality.limit, 320);
+  for (let i = 0; i < 20; i++) quality.record(10); assert.equal(quality.limit, 320);
 });
 
 test("live smoothing softens increases but never carries hair across current skin/background support", () => {

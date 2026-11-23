@@ -23,11 +23,13 @@ This is a company demonstration, not a production-ready product.
   blocks permission. Mobile browser policies vary; no universal support claim.
 - **Experimental live:** Separate VIDEO inference uses the existing two models,
   with conservative skin exclusion and the shared colour engine. In automated
-  Chrome tests, CPU delivered about 3.3 displayed FPS; software-rendered GPU was
+  Chrome tests, the updated CPU preview delivered about 3.4 displayed FPS at 640 × 480; software-rendered GPU was
   slower (about 0.7 sequential frames/sec after warm-up). Auto avoids known
   software renderers. Actual hardware GPU speed is unverified. The preview
   downscales after sustained slow pixel/transfer work, so fine edges can be missed. Take
-  Photo remains recommended. FPS is measured rather than guaranteed. The fixed
+  Photo remains recommended. A live strength slider and gentler exposure mapping
+  reduce the painted cap appearance; bright shades will look subtler on dark
+  hair. FPS is measured rather than guaranteed. The fixed
   512/256 model tensor sizes limit what input downscaling can improve.
 - **Device coverage:** Automated Chrome checks used a virtual webcam with real
   portrait source frames and the real models. They do not certify physical

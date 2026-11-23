@@ -162,7 +162,7 @@ test("skin exclusion blocks strand recovery and cannot be crossed to reach uncer
   assert.throws(() => combineHairConfidence(primary, new Float32Array(1), new Uint8Array(5), 5, 1), /dimensions/);
 });
 
-test("reused live colour buffers match still colour math without modifying original or excluded pixels", async () => {
+test("reused colour buffers retain default photo maths without modifying original or excluded pixels", async () => {
   const source = new ImageData(new Uint8ClampedArray(400), 100, 1), alpha = new Float32Array(100);
   for (let i = 0; i < 100; i++) { source.data.set([20 + i * 2, 15 + i, 12 + i, 255], i * 4); if (i >= 10 && i < 90) alpha[i] = .9; }
   const original = new Uint8ClampedArray(source.data), mask = { width: 100, height: 1, alpha, hairPixels: 80 };
@@ -178,4 +178,46 @@ test("reused live colour buffers match still colour math without modifying origi
   }
   assert.deepEqual(source.data, original);
   await assert.rejects(recolorHair({ cache, shade, output: source }), /must not alias/);
+});
+
+test("live blonde limits lightening of dim hair while retaining shadow and strand contrast", async () => {
+  const source = new ImageData(new Uint8ClampedArray(200 * 4), 200, 1), alpha = new Float32Array(200);
+  for (let i = 0; i < 200; i++) {
+    const v = 8 + i * .55;
+    source.data.set([v, v + 2, v, 255], i * 4);
+    if (i >= 10 && i < 190) alpha[i] = 1;
+  }
+  const original = new Uint8ClampedArray(source.data);
+  const cache = await prepareHairColor(source, { width: 200, height: 1, alpha, hairPixels: 180 });
+  const blonde = { ...shade, hex: "#D8C5A4" };
+  const output = await recolorHair({ cache, shade: blonde, intensity: 1, profile: "live" });
+  const photo = await recolorHair({ cache, shade: blonde, intensity: 1 });
+  let previous = -1, changed = 0;
+  const lights = (data: Uint8ClampedArray, i: number) => rgbToLab({ r: data[i * 4], g: data[i * 4 + 1], b: data[i * 4 + 2] }).l;
+  for (let i = 0; i < 200; i++) {
+    const l = lights(output.data, i), before = lights(source.data, i);
+    if (alpha[i] === 0) assert.deepEqual(output.data.slice(i * 4, i * 4 + 4), original.slice(i * 4, i * 4 + 4));
+    else {
+      assert.ok(l - before < 10.6, "Live lightening must stay bounded even at maximum strength");
+      assert.ok(l >= previous - .15, "Strand lightness ordering must survive rounding"); previous = l;
+      if (output.data[i * 4] !== original[i * 4]) changed++;
+    }
+  }
+  assert.ok(changed > 100, "A visible tint remains, rather than silently disabling recolouring");
+  assert.ok(lights(output.data, 180) - lights(output.data, 20) >= (lights(source.data, 180) - lights(source.data, 20)) * .85, "Hair contrast must not flatten into a uniform patch");
+  assert.ok(lights(photo.data, 160) > lights(output.data, 160) + 5, "Still-photo appearance keeps its existing stronger transform");
+  assert.deepEqual(source.data, original);
+  assert.deepEqual((await recolorHair({ cache, shade: blonde, profile: "live", intensity: 0 })).data, original);
+});
+
+test("live colour strength is source-relative and changes tint without accumulating colour", async () => {
+  const source = new ImageData(new Uint8ClampedArray(160), 40, 1), alpha = new Float32Array(40).fill(1);
+  for (let i = 0; i < 40; i++) source.data.set([40 + i, 43 + i, 39 + i, 255], i * 4);
+  const cache = await prepareHairColor(source, { width: 40, height: 1, alpha, hairPixels: 40 });
+  const copper = { ...shade, hex: "#B0633D" };
+  const full = await recolorHair({ cache, shade: copper, profile: "live", intensity: 1 });
+  const half = await recolorHair({ cache, shade: copper, profile: "live", intensity: .5 });
+  for (let i = 0; i < source.data.length; i++) assert.ok(Math.abs(half.data[i] - (source.data[i] + full.data[i]) / 2) <= 1);
+  await recolorHair({ cache, shade: { ...shade, hex: "#763747" }, profile: "live" });
+  assert.deepEqual((await recolorHair({ cache, shade: copper, profile: "live", intensity: 1 })).data, full.data);
 });

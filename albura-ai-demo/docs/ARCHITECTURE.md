@@ -78,14 +78,15 @@ flowchart LR
 - `components/try-on/LiveCameraPreview.tsx`: independent raw video plus processed
   canvas with identical geometry/mirroring, measured FPS, CPU/GPU controls, errors
   and Take Photo shortcut. One awaited frame at a time, at most eight starts/sec;
-  adaptive 320 → 256 → 192 bounds reduce pixel work only after sustained slow
+  adaptive 640 → 480 → 320 bounds reduce pixel work only after sustained slow
   pixel/transfer processing; fixed-size inference time is excluded from backoff.
   Lifecycle/session guards release late streams, workers and returned bitmaps.
 - `lib/ai/live-client.ts`, `live-segmentation.worker.ts`, `live-utils.ts`: fixed
   VIDEO model pair using `segmentForVideo` callbacks with increasing millisecond
   timestamps. Auto prefers hardware GPU; known software renderers, unavailable
   GPU startup, or a GPU frame failure fall back to a fresh CPU worker. Explicit
-  GPU remains available for measurement. Temporal smoothing cannot expand beyond
+  GPU remains available for measurement. Each frame carries its colour strength
+  so stale responses are discarded when the slider changes. Temporal smoothing cannot expand beyond
   current hair support; scene changes, no-hair frames, time gaps and resized
   frames reset history. Colour smoothing stabilizes global statistics without
   blurring strand pixels. Worker-only buffer reuse and disabling timer yields
@@ -112,6 +113,8 @@ flowchart LR
   Shade changes visit those indices rather than converting the full image again.
   Monotonic bounded lightness, source chroma detail, a saturation cap, highlight
   protection and hue-preserving sRGB gamut fitting reduce flat/tinted reflections.
+  Live uses a gentler appearance profile and 70% default strength; default still
+  rendering is unchanged. See `LIVE_COLOUR_FIX.md` for the reported cap effect.
   Zero-mask pixels retain their exact original RGBA bytes. Loops yield and use
   AbortSignal to suppress stale replacements and rapid selections.
 - `lib/ai/photo-utils.ts`: validation, orientation-aware decode, downscale, canvas

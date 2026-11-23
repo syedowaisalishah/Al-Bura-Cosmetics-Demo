@@ -56,18 +56,18 @@ scope.onmessage = ({ data: request }) => {
       if (!context || !canvas) throw new Error("Live Canvas 2D is unavailable.");
       context.drawImage(request.image, 0, 0);
       const source = context.getImageData(0, 0, width, height), maskStart = performance.now();
-      const mask = temporal.update(refineHairMask(segmentation, width, height), source.data, request.timestampMs);
+      const mask = temporal.update(refineHairMask(segmentation, width, height, { featherRadiusPx: Math.max(1, Math.round(Math.max(width, height) / 320)) }), source.data, request.timestampMs);
       const maskMs = performance.now() - maskStart, colorStart = performance.now();
       if (mask.hairPixels > 0) {
         const cache = await prepareHairColor(source, mask, undefined, workspace);
         workspace.indices = cache.indices; workspace.lab = cache.lab;
         color.update(cache);
-        output = await recolorHair({ cache, shade: request.shade, output, yieldToBrowser: false });
+        output = await recolorHair({ cache, shade: request.shade, intensity: request.intensity, profile: "live", output, yieldToBrowser: false });
         context.putImageData(output, 0, 0);
       } else color.reset();
       const recolorMs = performance.now() - colorStart, frame = canvas.transferToImageBitmap();
       scope.postMessage({ type: "frame", id: request.id, result: {
-        frame, width, height, hairPixels: mask.hairPixels, shadeId: request.shade.id, timestampMs: request.timestampMs,
+        frame, width, height, hairPixels: mask.hairPixels, shadeId: request.shade.id, intensity: request.intensity, timestampMs: request.timestampMs,
         inferenceMs, maskMs, recolorMs, totalMs: performance.now() - started,
       } }, [frame]);
     } catch (cause) {

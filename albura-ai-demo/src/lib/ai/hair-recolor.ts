@@ -12,7 +12,7 @@ export interface HairColorCache {
   toneAnchor: number;
 }
 export interface HairColorWorkspace { indices?: Uint32Array; lab?: Float32Array; yieldToBrowser?: boolean }
-export interface HairRecolorInput { cache: HairColorCache; shade: Shade; intensity?: number; signal?: AbortSignal; output?: ImageData; yieldToBrowser?: boolean }
+export interface HairRecolorInput { cache: HairColorCache; shade: Shade; intensity?: number; profile?: "photo" | "live"; signal?: AbortSignal; output?: ImageData; yieldToBrowser?: boolean }
 export type RecolorHair = (input: HairRecolorInput) => Promise<ImageData>;
 const pause = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 function checkAbort(signal?: AbortSignal) { if (signal?.aborted) throw new DOMException("Rendering cancelled", "AbortError"); }
@@ -55,7 +55,7 @@ export async function prepareHairColor(source: ImageData, mask: RefinedHairMask,
 
 const logit = (v: number) => Math.log(v / (1 - v));
 /** Bounded luminance mapping plus source chroma detail; specular highlights keep their light. */
-export const recolorHair: RecolorHair = async ({ cache, shade, intensity = 0.88, signal, output: reusableOutput, yieldToBrowser = true }) => {
+export const recolorHair: RecolorHair = async ({ cache, shade, intensity = 0.88, profile = "photo", signal, output: reusableOutput, yieldToBrowser = true }) => {
   checkAbort(signal);
   const { source, mask, indices, lab, mean, toneAnchor } = cache;
   if (reusableOutput && (reusableOutput.width !== source.width || reusableOutput.height !== source.height || reusableOutput.data.buffer === source.data.buffer)) throw new Error("Invalid recolour workspace: dimensions must match and original pixels must not alias output.");
@@ -64,8 +64,11 @@ export const recolorHair: RecolorHair = async ({ cache, shade, intensity = 0.88,
   const strength = Number.isFinite(intensity) ? clamp(intensity, 0, 1) : 0;
   if (strength === 0) return output;
   const target = shade.lab ?? rgbToLab(hexToRgb(shade.hex));
-  const desiredTone = clamp(toneAnchor + clamp((target.l - toneAnchor) * 0.85, -32, 25), 2, 98);
-  const shift = clamp(logit(desiredTone / 100) - logit(clamp(toneAnchor / 100, 0.01, 0.99)), -1.8, 1.2);
+  // Camera exposure is part of the scene lighting. A bright target must not turn
+  // dim, low-contrast hair into a uniformly bright patch at the mask boundary.
+  const live = profile === "live";
+  const desiredTone = clamp(toneAnchor + clamp((target.l - toneAnchor) * 0.85, live ? -16 : -32, live ? 8 : 25), 2, 98);
+  const shift = clamp(logit(desiredTone / 100) - logit(clamp(toneAnchor / 100, 0.01, 0.99)), live ? -.65 : -1.8, live ? .4 : 1.2);
   const targetChroma = Math.hypot(target.a, target.b);
   const chromaScale = targetChroma > 38 ? 38 / targetChroma : 1;
   const highlightStart = Math.max(65, Math.min(82, mean.l + 22));
@@ -78,11 +81,12 @@ export const recolorHair: RecolorHair = async ({ cache, shade, intensity = 0.88,
       const mappedL = 100 / (1 + Math.exp(-(logit(unitL) + shift)));
       const highlight = smoothstep(highlightStart, 98, originalL);
       // Keep dark strands dark and avoid tinting nearly white specular reflections.
-      const toneWeight = (0.2 + 0.8 * smoothstep(3, 25, originalL)) * (1 - 0.9 * highlight);
+      const toneWeight = (live ? smoothstep(2, 32, originalL) : 0.2 + 0.8 * smoothstep(3, 25, originalL)) * (1 - 0.9 * highlight);
+      const chromaMix = live ? .75 : .9, detail = live ? .75 : .45;
       const rgb = gamutMapLabToRgb({
         l: originalL + (mappedL - originalL) * (1 - 0.65 * highlight),
-        a: originalA * (1 - toneWeight) + (target.a * chromaScale * 0.9 + (originalA - mean.a) * 0.45) * toneWeight,
-        b: originalB * (1 - toneWeight) + (target.b * chromaScale * 0.9 + (originalB - mean.b) * 0.45) * toneWeight,
+        a: originalA * (1 - toneWeight) + (target.a * chromaScale * chromaMix + (originalA - mean.a) * detail) * toneWeight,
+        b: originalB * (1 - toneWeight) + (target.b * chromaScale * chromaMix + (originalB - mean.b) * detail) * toneWeight,
       });
       output.data[p] = source.data[p] + (rgb.r - source.data[p]) * alpha;
       output.data[p + 1] = source.data[p + 1] + (rgb.g - source.data[p + 1]) * alpha;

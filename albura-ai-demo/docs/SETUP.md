@@ -54,7 +54,9 @@ tries GPU, prefers CPU for known software renderers, and falls back to CPU on
 GPU initialization/frame errors. Select explicit CPU or GPU while stopped to
 compare on your device. Live uses fixed VIDEO models, `segmentForVideo`, one
 frame at a time, current-frame mask support and bounded adaptive resolution.
-Measured FPS appears after frames arrive. Take Photo is the recommended path
+The live frame starts within 640 × 480; Colour strength defaults to 70% and can
+be adjusted without restarting AI. Bright shades use gentler lightening to retain
+source shadows. Measured FPS appears after frames arrive. Take Photo is the recommended path
 for finer detail, before/after comparison and downloads. Its shortcut captures
 raw camera video rather than the recoloured canvas.
 

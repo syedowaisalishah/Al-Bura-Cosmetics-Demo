@@ -19,7 +19,8 @@ export function LiveCameraPreview({ onCapture, onTakePhoto }: { onCapture: (file
   const [preference, setPreference] = useState<LivePreference>("auto");
   const [hasVideo, setHasVideo] = useState(false), [hasFrame, setHasFrame] = useState(false), [hasHair, setHasHair] = useState(false);
   const [frameShade, setFrameShade] = useState<string | null>(null), [showOriginal, setShowOriginal] = useState(false), [mirrored, setMirrored] = useState(true);
-  const [metrics, setMetrics] = useState({ fps: 0, width: 320, height: 240, delegate: "", fallback: "", slow: false });
+  const [intensity, setIntensity] = useState(.7), strength = useRef(.7);
+  const [metrics, setMetrics] = useState({ fps: 0, width: 640, height: 480, delegate: "", fallback: "", slow: false });
   useEffect(() => { shade.current = selectedShade; }, [selectedShade]);
   const release = useCallback((current: LiveSession | null) => {
     if (!current || current.stopped) return;
@@ -59,7 +60,7 @@ export function LiveCameraPreview({ onCapture, onTakePhoto }: { onCapture: (file
     const current: LiveSession = { stream: null, client: null, abort: new AbortController(), raf: null, stopped: false, detach: null };
     session.current = current; captureJob.current++;
     const active = () => mounted.current && session.current === current && !current.stopped;
-    setError(null); setStatus("requesting"); setMetrics({ fps: 0, width: 320, height: 240, delegate: "", fallback: "", slow: false });
+    setError(null); setStatus("requesting"); setMetrics({ fps: 0, width: 640, height: 480, delegate: "", fallback: "", slow: false });
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 960 }, frameRate: { ideal: 24, max: 30 } } });
       if (!active()) { stopCameraTracks(stream); return; }
@@ -89,16 +90,17 @@ export function LiveCameraPreview({ onCapture, onTakePhoto }: { onCapture: (file
           const size = liveDimensions(source.videoWidth, source.videoHeight, quality.limit);
           if (input.width !== size.width || input.height !== size.height) { input.width = size.width; input.height = size.height; }
           context.drawImage(source, 0, 0, input.width, input.height);
-          const result = await current.client!.processFrame(input, timestampMs, shade.current);
+          const result = await current.client!.processFrame(input, timestampMs, shade.current, strength.current);
           try {
             if (!active()) return;
             // Model tensors stay 512/256 regardless of input size. Downscale only
             // when pixel/transfer work is slow, preserving detail on inference-bound CPUs.
             quality.record(Math.max(0, performance.now() - started - result.inferenceMs));
-            if (result.shadeId !== shade.current.id) return;
+            if (result.shadeId !== shade.current.id || result.intensity !== strength.current) return;
             if (output.width !== result.width || output.height !== result.height) { output.width = result.width; output.height = result.height; }
             destination.drawImage(result.frame, 0, 0);
             output.dataset.frames = String(++total); output.dataset.shadeId = result.shadeId; output.dataset.hairPixels = String(result.hairPixels);
+            output.dataset.intensity = String(result.intensity);
             output.dataset.inferenceMs = result.inferenceMs.toFixed(1); output.dataset.maskMs = result.maskMs.toFixed(1); output.dataset.recolorMs = result.recolorMs.toFixed(1);
             if (first) { first = false; setHasFrame(true); setStatus("running"); }
             if (renderedShade.current !== result.shadeId) { renderedShade.current = result.shadeId; setFrameShade(result.shadeId); }
@@ -147,6 +149,7 @@ export function LiveCameraPreview({ onCapture, onTakePhoto }: { onCapture: (file
       {hasVideo && <span className="camera-frame-label">{hasFrame && !showOriginal ? "Experimental AI preview" : "Original camera"}</span>}
     </div>
     {hasVideo && <div className="camera-controls"><label><input type="checkbox" checked={showOriginal} onChange={(event) => setShowOriginal(event.target.checked)} /> Show original</label><label><input type="checkbox" checked={mirrored} onChange={(event) => setMirrored(event.target.checked)} /> Mirror selfie</label></div>}
+    <div className="live-strength"><label htmlFor="live-strength">Colour strength <output htmlFor="live-strength">{Math.round(intensity * 100)}%</output></label><input id="live-strength" type="range" min="0" max="100" step="5" value={Math.round(intensity * 100)} onChange={(event) => { const value = Number(event.target.value) / 100; strength.current = value; setIntensity(value); }} /><p className="small-note">Lower the strength for a softer tint. Light shades keep your camera lighting and natural shadows.</p></div>
     {active && status !== "capturing" && <p className="live-metrics">{metrics.fps ? `${metrics.fps.toFixed(1)} measured FPS · ${metrics.delegate} · ${metrics.width} × ${metrics.height}` : "Measuring live preview speed…"}</p>}
     {metrics.fallback && active && <p className="small-note">{metrics.fallback}</p>}
     {metrics.slow && active && <p className="live-slow">This device is processing slowly. Take Photo is recommended; it uses the full captured image.</p>}

@@ -1,5 +1,11 @@
 # Three-mode hair try-on — 2026-11-23
 
+This records the initial three-mode restoration. A later same-day correction
+adds 640-pixel live detail, gentler camera-specific colour appearance and a
+strength slider. Current validation is **44 tests and 49 workflow checks**; see
+[Live colour correction](LIVE_COLOUR_FIX.md). Measurements below describe the
+initial version and its processing bounds.
+
 Upload Photo, Live AI Camera (Experimental), and Take Photo (recommended) are
 available together. Camera capture keeps its existing component and shared
 still-image pipeline. No models, runtime dependencies, paid APIs or backend

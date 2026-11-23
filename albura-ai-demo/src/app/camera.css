@@ -38,6 +38,9 @@
 .live-stage canvas.is-visible { visibility: visible; }
 .live-stage canvas.is-mirrored { transform: scaleX(-1); }
 .live-metrics { font-size: .875rem; color: var(--muted); margin-block: 12px; }
+.live-strength { margin-top: 14px; }
+.live-strength label { display: flex; justify-content: space-between; gap: 12px; font-size: .875rem; }
+.live-strength input { display: block; width: 100%; margin-block: 12px; accent-color: var(--gold); }
 .live-slow { background: #faf2df; border-left: 3px solid var(--gold); padding: 12px; font-size: .875rem; margin-top: 12px; }
 .live-capture { display: grid; gap: 10px; justify-items: start; margin-top: 18px; }
 @media (max-width: 400px) { .tryon-mode-tabs button { font-size: .8125rem; } .mode-note { font-size: .7rem; } }
