@@ -25,7 +25,10 @@ unapproved assessment rules. There is no database, authentication/admin, image
 upload endpoint or paid inference service. It must not be presented as the full
 production system from the supplied 57-person-day scope.
 
-No Vercel project credentials are linked in this workspace; cloud publication
-has not been performed. The tested local production preview uses port 3002.
+The GitHub integration reported successful Vercel deployment checks for feature
+commit `4f06c09` in both linked projects: `albura-ai` and `albura-ai-demo`.
+Their public-domain endpoints have not been smoke-tested because the public
+URL was not supplied. No Vercel credentials are stored here. The tested local
+production preview uses port 3002.
 
 Reference: [Vercel build configuration](https://vercel.com/docs/builds/configure-a-build).

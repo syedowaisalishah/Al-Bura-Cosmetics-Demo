@@ -80,8 +80,10 @@ server build so the API routes work.
 Import the GitHub repository and deploy the current commit. If you previously
 selected Other or `out`, the repository configuration now explicitly sets
 Next.js and `.next`; confirm the Root Directory before redeploying. Serve
-the site at the domain root over HTTPS for camera permissions. No cloud
-publication is claimed: this workspace has no linked Vercel project credentials.
+the site at the domain root over HTTPS for camera permissions. The GitHub integration reported successful Vercel builds for feature commit
+`4f06c09` in both linked projects (`albura-ai`, `albura-ai-demo`). The production
+server and endpoints were tested locally; public-domain runtime checks still
+require the deployment URL. No Vercel credentials are stored in this workspace.
 Choose hosting that permits the intended commercial/interview use.
 
 References: [Vercel framework settings](https://vercel.com/docs/builds/configure-a-build),
