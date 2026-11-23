@@ -24,7 +24,7 @@ export function TechnicalGuide() {
     const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `albura-consultation-${shade.code}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   return <Card className="guide-card consultation-card" id="technical-guide" aria-labelledby="guide-title">
-    <div className="card-heading"><div><p className="eyebrow">WINDOW 2 · YOUR COLOUR PLAN</p><h2 id="guide-title">Colour consultation</h2></div><BookOpen size={25} strokeWidth={1.25} aria-hidden="true" /></div>
+    <div className="card-heading"><div><p className="eyebrow">02 / YOUR COLOUR PLAN</p><h2 id="guide-title">Colour consultation</h2></div><BookOpen size={25} strokeWidth={1.25} aria-hidden="true" /></div>
     <p className="consultation-intro">Your photo suggests a starting level. Confirm it, then explore what your chosen shade means for your colour journey.</p>
     <div className={`photo-handoff ${photoAnalysis ? "has-analysis" : ""}`} role="status" aria-live="polite">
       <ImageIcon size={21} aria-hidden="true" /><div><strong>{analysisPending ? "Analysing your original hair…" : photoAnalysis ? `${photoAnalysis.source === "camera" ? "Camera photo" : "Uploaded photo"} connected` : "Start with your photo"}</strong>

@@ -20,6 +20,10 @@ export function TryOnStudio() {
   const mobile = useSyncExternalStore(subscribeViewport, isMobile, desktopOnServer);
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
   useEffect(() => {
+    const shade = new URLSearchParams(window.location.search).get("shade");
+    if (shade) selectShade(shade);
+  }, [selectShade]);
+  useEffect(() => {
     const selectFromHash = () => { if (window.location.hash === "#technical-guide") { setTab("guide"); requestAnimationFrame(() => document.getElementById("technical-guide")?.scrollIntoView({ block: "start" })); } };
     const timer = setTimeout(selectFromHash, 0);
     window.addEventListener("hashchange", selectFromHash);
@@ -32,7 +36,7 @@ export function TryOnStudio() {
   }
   return <>
     <ol className="studio-instructions" aria-label="How to use the colour studio"><li><span>1</span><div><strong>Add your photo</strong><p>Upload a portrait or take a photo. Your image stays private.</p></div></li><li><span>2</span><div><strong>Explore a shade</strong><p>Wait for the preview, then choose from the palette below.</p></div></li><li><span>3</span><div><strong>Compare & save</strong><p>Save your preview and confirm your photo estimate in Window 2.</p></div></li></ol>
-    <section className="shade-quickpick" aria-label="Quick shade selection"><div><strong>Choose your shade</strong><span>One selection, both windows</span></div><div className="quick-shades">{shades.map((shade) => <button type="button" key={shade.id} aria-label={`Quick select ${shade.name}`} aria-pressed={selectedShade.id === shade.id} onClick={() => selectShade(shade.id)}><span style={{ backgroundColor: shade.hex }} aria-hidden="true" /><span>{shade.name}</span></button>)}</div><a href="#palette-title">Search the full palette</a></section>
+    <section className="shade-quickpick" aria-label="Quick shade selection"><div><strong>The colour edit</strong><span>Choose a shade. Make it yours.</span></div><div className="quick-shades">{shades.map((shade) => <button type="button" key={shade.id} aria-label={`Quick select ${shade.name}`} aria-pressed={selectedShade.id === shade.id} onClick={() => selectShade(shade.id)}><span style={{ backgroundColor: shade.hex }} aria-hidden="true" /><span>{shade.name}</span></button>)}</div><a href="#palette-title">Search all shades ↗</a></section>
     <div className="studio-tabs" role="tablist" aria-label="Studio windows">
       <button ref={(element) => { tabButtons.current[0] = element; }} id="try-on-tab" type="button" role="tab" aria-selected={tab === "try-on"}
         aria-controls="try-on-panel" tabIndex={tab === "try-on" ? 0 : -1} onClick={() => setTab("try-on")} onKeyDown={(event) => tabKeys(event, 0)}>Try-On</button>

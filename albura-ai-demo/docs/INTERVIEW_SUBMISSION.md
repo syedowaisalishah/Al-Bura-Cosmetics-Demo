@@ -97,7 +97,12 @@ database persistence or certified colour-match score is claimed.
   24 FPS targets and production operations remain unverified.
 
 Local production preview: `http://127.0.0.1:3002/try-on/`.
-Feature commit `4f06c09` was pushed to `main`; both linked Vercel deployment
-checks reported success. Public-domain smoke tests remain unverified without
-the public URL. The frontend, backend and browser flows were verified on the
-local production server. No deployment credentials are stored in the repository.
+Feature commit `4f06c09` and documentation commit `b5cd2cf` were pushed to
+`main`; both linked Vercel deployments reported success. The public domain
+`https://albura-ai.vercel.app/` subsequently passed 24 native browser checks,
+including live backend responses, photo-to-consultation flow, PDF/summary,
+mobile layout and capture with a virtual webcam. No deployment credentials
+are stored in the repository.
+
+The subsequent editorial redesign of the homepage and studio is described in
+[DESIGN_UPDATE.md](DESIGN_UPDATE.md).

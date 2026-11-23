@@ -151,7 +151,7 @@ export function HairTryOn({ active = true }: { active?: boolean }) {
   }
 
   return <Card className="tryon-card" aria-labelledby="tryon-title">
-        <div className="card-heading"><div><p className="eyebrow">WINDOW 1</p><h2 id="tryon-title">Your colour preview</h2></div><ScanFace size={25} strokeWidth={1.25} aria-hidden="true" /></div>
+        <div className="card-heading"><div><p className="eyebrow">01 / THE TRY-ON</p><h2 id="tryon-title">Your colour preview</h2></div><ScanFace size={25} strokeWidth={1.25} aria-hidden="true" /></div>
         <div className="selected-shade"><span style={{ backgroundColor: selected.hex }} aria-hidden="true" /><p><strong>{selected.name}</strong><span>{selected.code} · {selected.hex}</span></p></div>
         <div className="tryon-mode-tabs" role="tablist" aria-label="Hair try-on modes">
           <button id="photo-mode-tab" ref={(element) => { modeButtons.current[0] = element; }} type="button" role="tab" aria-selected={mode === "photo"} aria-controls="photo-mode-panel" tabIndex={mode === "photo" ? 0 : -1} onClick={() => setMode("photo")} onKeyDown={(event) => modeKeys(event, 0)}>Upload Photo</button>

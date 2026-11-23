@@ -1,189 +1,107 @@
-# Current submission architecture
+# Al Bura Colour Studio architecture
 
-The November 23 interview demo is a full-stack Next.js app. The earlier static
-export architecture below is historical. Read the app README for deployment.
+One full-stack Next.js App Router application serves the homepage, try-on studio,
+three API handlers and static model assets. It deploys to Vercel with the Next.js
+preset and `.next` output. Node 22 is used for development/build and API routes.
+The original static-export implementation has been replaced; historical phase
+reports describe that earlier state.
 
-- Browser: original-photo decode, real MediaPipe IMAGE/VIDEO workers, mask
-  refinement, cached colour rendering and downloads. Photos never reach the API.
-- `photo-analysis.ts`: estimates starting depth from original masked Lab pixels,
-  using an illustrative reference scale. User confirmation/override is required.
-- Context: shares shade, photo handoff, confirmation, profile and assessment.
-  Guide updates never rerun segmentation or recolour an unchanged shade.
-- `POST /api/guide/calc/`: bounded JSON, strict Zod schema, trusted catalogue
-  lookup, deterministic assessment and contextual notes. No chemical formulas.
-- `GET /api/shades/`, `/api/health/`: versioned demo data and service health.
-- Mobile tabs preserve photo/profile state and stop hidden camera resources.
-- Standard Next.js Node/serverless build; Vercel Next.js preset, `.next` output.
-  Database/admin/approved product rules remain production work.
-
-## Earlier implementation record
-
-
-One Next.js App Router app with React, strict TypeScript and Tailwind CSS. The
-browser reads an uploaded or camera-captured photo, runs MediaPipe CPU models,
-recolours using Canvas 2D, compares before/after and downloads a PNG. Camera
-capture preview is normal video with no AI processing; a separate experimental
-live mode runs VIDEO segmentation and recolouring in a worker. No image-upload API, cloud inference,
-database or paid services are involved.
-
-## Two windows and shared shade data
-
-Window 1 provides Upload Photo, Live AI Camera (Experimental), and Take Photo tabs. Window 2 is the synchronized educational
-technical guide with manual inputs, demo classifications, references, safety
-locks and browser printing. Chemical formulations remain unimplemented.
-`demo-shades.json` is the shared source of twelve illustrative shades, validated
-with Zod. Neither its codes nor values are officially approved Al Bura colours.
-No project scope PDF was present in the repository.
+## Browser: vision and interaction
 
 ```mermaid
-flowchart LR
-  subgraph Browser[Browser only]
-    Upload[Next.js upload UI] --> Decode[Orientation-aware decode and 1024 px limit]
-    Decode --> Worker[MediaPipe CPU worker]
-    Worker --> Hair[Official hair confidence]
-    Worker --> Guard[Official multiclass hair and skin masks]
-    Hair --> Mask[Agreement, skin exclusion, alignment and feathering]
-    Guard --> Mask
-    Decode --> Cache[Original pixels and CIELAB cache]
+flowchart TD
+  subgraph Browser
+    Upload[Upload photo] --> Prepare[Validate, orient and resize]
+    Capture[Capture original camera frame] --> Prepare
+    Prepare --> ImageWorker[MediaPipe IMAGE worker]
+    ImageWorker --> Mask[Hair evidence, skin exclusion and edge refinement]
+    Prepare --> Cache[Original pixels and cached Lab values]
     Mask --> Cache
-    Cache --> Canvas[Canvas recolouring]
-    Canvas --> Compare[Before/After preview]
-    Canvas --> PNG[Processed PNG download]
-    State[React Context: selected shade and manual inputs] --> Palette[Shade palette]
-    State --> Canvas
-    State --> Live[VIDEO worker: GPU or CPU, one frame in flight]
-    Camera --> Live
-    Live --> LiveMask[Current hair support and temporal mask smoothing]
-    LiveMask --> LiveColor[Shared CIELAB engine, bounded live resolution]
-    LiveColor --> LiveCanvas[Experimental preview and measured FPS]
-    Camera --> Raw[Live Take Photo freezes original video]
-    Raw --> Capture
-    Camera[getUserMedia normal video] --> Capture[Freeze and mirror frame on Capture Photo]
-    Capture --> Stop[Stop all camera tracks]
-    Stop --> File[Local PNG File]
-    File --> Decode
-    State --> Rules[Deterministic unapproved demo rules]
-    Rules --> Guide[Window 2 guide]
-    Guide --> Print[Print assessment and safety limits]
+    Cache --> Render[CIELAB recolouring and Canvas preview]
+    Render --> Result[Before/After and PNG download]
+    Cache --> Estimate[Original-hair median lightness estimate]
+    Estimate --> Context[React Context: shade, level, profile and confirmation]
+    Context --> Render
+    Context --> Guide[Window 2 consultation]
+    Camera[getUserMedia] --> Capture
+    Camera --> Live[Separate VIDEO worker, one frame in flight]
+    Live --> LiveResult[Smoothed experimental preview and measured FPS]
+    Context --> Live
   end
-  JSON[Shade JSON] --> Palette
-  JSON --> State
+  Context -->|Profile metadata only| API[POST /api/guide/calc/]
+  JSON[Versioned demo shade JSON] --> API
+  API -->|Validated assessment| Guide
 ```
 
-## Module responsibilities
+- `HairTryOn.tsx` provides one `processPhoto(file, source)` entry point for upload
+  and capture. IMAGE segmentation is performed once per photo. Changing shades
+  reuses the refined mask, original pixels and Lab cache.
+- `CameraPreview.tsx` shows ordinary camera video. Capturing freezes and mirrors
+  the original video frame, stops tracks and creates a local PNG File.
+- `LiveCameraPreview.tsx` uses `segmentForVideo` through a separate worker. It
+  supports GPU/CPU segmentation, automatic CPU fallback, adaptive frame sizes,
+  temporal smoothing and measured FPS. One frame is in flight at a time.
+- Both existing official models are self-hosted: a hair-only segmenter and a
+  multiclass selfie model supplying additional hair evidence and skin protection.
+- `mask-utils.ts` aligns confidence masks, protects skin, removes small islands
+  and feathers boundaries. IMAGE mode includes bounded recovery of supported
+  strands and small gaps. It does not paint a fixed head-shaped mask.
+- `hair-recolor.ts` uses CIELAB, bounded lightness changes, source colour detail,
+  highlight protection and gamut mapping. Recolouring currently uses pixel
+  calculations and Canvas; GPU segmentation is not a WebGL recolouring shader.
+- `photo-analysis.ts` estimates starting depth from the original hair pixels using
+  an illustrative scale. Lighting and existing colour affect this approximation;
+  the user confirms or overrides it before consultation export.
+- `TryOnProvider.tsx` shares the shade and hair profile. Guide changes do not rerun
+  segmentation. The API assessment is debounced, stale requests are cancelled and
+  a clearly labelled local assessment remains available if the API fails.
 
-- `src/app`: routes, branding, responsive theme and metadata. Server components
-  emit the shell; a deep `TryOnProvider` boundary shares studio state.
-  `guide.css` styles the guide, mobile tabs and print view; `camera.css` styles
-  capture and live preview. `studio.css` adds final spacing, responsive controls, bounded previews,
-  search/filter UI and first-time instructions.
-- `components/try-on/TryOnProvider.tsx`: selected shade and manual guide inputs.
-  Target level, lift difference and guide result are derived, avoiding duplicate
-  state. Shade identity stays stable across guide-only updates.
-- `components/try-on/TryOnStudio.tsx`: desktop panels, keyboard-accessible mobile
-  tabs and shared palette. Photo/guide state stays mounted across tab switches;
-  the camera unmounts when its pane is hidden on mobile.
-- Other `components/try-on`: upload/replace/reset, status, error/retry, comparison
-  and PNG download. The colour effect depends only on selected shade and image
-  cache version and mode; guide changes do not rerun recolouring or MediaPipe.
-  Hidden still photos do not recolour during live preview; leaving live reapplies
-  the current shade from the cached original without another inference.
-- `components/try-on/HairTryOn.tsx`: one `processPhoto(file, source)` entry for
-  file picker and camera capture. It owns the original, refined mask, Lab cache,
-  recolour effect, cancellation, shared comparison, downloads and object URLs.
-- `components/try-on/CameraPreview.tsx`: explicit permission, normal video,
-  Open/Capture/Retake/Stop, mirror preference and safe stream lifecycle. It
-  receives a capture callback and never imports or initializes MediaPipe.
-- `components/try-on/LiveCameraPreview.tsx`: independent raw video plus processed
-  canvas with identical geometry/mirroring, measured FPS, CPU/GPU controls, errors
-  and Take Photo shortcut. One awaited frame at a time, at most eight starts/sec;
-  adaptive 640 → 480 → 320 bounds reduce pixel work only after sustained slow
-  pixel/transfer processing; fixed-size inference time is excluded from backoff.
-  Lifecycle/session guards release late streams, workers and returned bitmaps.
-- `lib/ai/live-client.ts`, `live-segmentation.worker.ts`, `live-utils.ts`: fixed
-  VIDEO model pair using `segmentForVideo` callbacks with increasing millisecond
-  timestamps. Auto prefers hardware GPU; known software renderers, unavailable
-  GPU startup, or a GPU frame failure fall back to a fresh CPU worker. Explicit
-  GPU remains available for measurement. Each frame carries its colour strength
-  so stale responses are discarded when the slider changes. Temporal smoothing cannot expand beyond
-  current hair support; scene changes, no-hair frames, time gaps and resized
-  frames reset history. Colour smoothing stabilizes global statistics without
-  blurring strand pixels. Worker-only buffer reuse and disabling timer yields
-  avoid photo/UI scheduling overhead. The IMAGE worker stays separate.
-- `lib/camera.ts`: permission/error messages, every-track cleanup and synchronous
-  frame freezing/mirroring followed by PNG File encoding. Capture limits the
-  longest dimension to the existing 1024 px processing limit.
-- `lib/ai/mediapipe.ts`: one reusable IMAGE worker, typed responses, timeouts and
-  cleanup. Factories dynamically import the official SDK in the browser/worker.
-- `lib/ai/segmentation.worker.ts`: IMAGE inference with both existing verified
-  models. Strong agreement anchors connected strand recovery when one model
-  is uncertain but both provide hair evidence. Conservative skin exclusion
-  blocks recovery across face/body boundaries. It returns owned mask arrays and closes
-  incoming bitmaps in `finally`. The separate typed VIDEO protocol cannot
-  reconfigure this IMAGE worker.
-- `lib/ai/hair-segmentation.ts`: verified output extraction. Native result buffers
-  are copied before `result.close()` for IMAGE, or inside the native callback
-  lifetime for VIDEO. Transferred ImageBitmaps close in `finally`.
-- `lib/ai/mask-utils.ts`: bilinear pixel-centre resizing, confidence threshold,
-  connected tiny-region removal, bounded inward feathering, skin exclusion and
-  development overlay. IMAGE evidence also recovers small multiclass-confirmed
-  gaps and dilation-only border losses from immutable support. Native skin
-  remains protected; VIDEO keeps the existing policy. See `EDGE_COVERAGE_FIX.md`.
-  No hand-painted mask or fixed head template is used.
-- `lib/ai/hair-recolor.ts`: cache active hair indices, compact Lab values,
-  weighted mean and a bounded upper-tone histogram anchor once per photo.
-  Shade changes visit those indices rather than converting the full image again.
-  Monotonic bounded lightness, source chroma detail, a saturation cap, highlight
-  protection and hue-preserving sRGB gamut fitting reduce flat/tinted reflections.
-  Live uses a gentler appearance profile and 70% default strength; default still
-  rendering is unchanged. See `LIVE_COLOUR_FIX.md` for the reported cap effect.
-  Zero-mask pixels retain their exact original RGBA bytes. Loops yield and use
-  AbortSignal to suppress stale replacements and rapid selections.
-- `lib/ai/photo-utils.ts`: validation, orientation-aware decode, downscale, canvas
-  conversion and object URL creation. URLs, bitmaps, caches and workers are
-  released on replace/reset or route teardown as appropriate.
-- `lib/color`: sRGB/D65 XYZ/CIELAB math, chroma-only gamut fitting and pure
-  shade search/family filtering. `ShadePalette` stores only its local filter state;
-  filtering never mutates the selected Context shade.
-- `lib/guide/guide-rules.ts`: pure level/history classification, input validation,
-  warnings and a fixed `demo_unapproved` status; no formulation values.
-- `lib/guide/guide-reference.ts`: illustrative level/pigment values, manual input
-  options, notices and locked categories sourced from the supplied brief.
-- `components/guide`: controlled level/history inputs, synchronized shade summary,
-  lift assessment, educational chart, review pathway, approval locks and print UI.
-- `public/models`: original official binaries, checksums, licenses/model cards.
-- `public/wasm`, `public/workers`: generated local runtime assets, ignored by Git.
-  `scripts/sync-mediapipe-assets.ts` copies locked SDK files and bundles the
-  separate TypeScript workers with esbuild on install and before dev/build.
-- `tests/vision.test.ts`: meaningful pure-math, mask, cancellation and pixel
-  preservation checks. `tests/guide.test.ts` covers the demo rule boundaries and
-  all 300 level/history combinations. `tests/camera.test.ts` verifies camera
-  errors, cleanup, unready-frame rejection and IMAGE result buffer ownership.
-  `tests/shades.test.ts` verifies metadata/filtering. See `PHASE_5_REPORT.md`
-  for historical browser/photo evidence; `tests/live.test.ts` and
-  `LIVE_CAMERA_REPORT.md` cover the restored three-mode workflow.
+## Server and data
 
-## Configuration, privacy and deployment
+| Route | Responsibility |
+| --- | --- |
+| `GET /api/shades/` | Twelve illustrative shades and their data version |
+| `POST /api/guide/calc/` | Strict Zod validation, trusted shade lookup, deterministic level/history assessment and contextual notes |
+| `GET /api/health/` | Service health, data version and browser-only processing status |
 
-`.env` is a real private local file in the application root. Next.js reads it;
-only the non-secret `NEXT_PUBLIC_` asset paths and development debug flag are
-exposed at build time. No API secret is needed. `.env` is ignored and is never
-copied to `public`, deployment source or a build archive. Sensible asset-path
-defaults also let a clean clone build without missing credentials.
+The assessment endpoint accepts bounded JSON profile metadata. It rejects
+unknown fields and invalid levels/options. It does not accept images or output
+chemical formulas. Responses are not cached. The demo catalogue is validated
+from `src/data/demo-shades.json`; no database or administration service is claimed.
 
-Static export (`output: "export"`) emits `out/`, including models, WASM and the
-workers. Serve it from the domain root over HTTPS/localhost. Photo uploads and
-processing remain in browser memory; only model/website assets are downloaded.
-`npm start` is a loopback-only export preview, not a production backend.
-`vercel.json` serves the same `out` export with the Other framework preset; see
-the README for root-directory, Node 22.x, build commands and Hobby eligibility.
-No Vercel credentials/project linkage or deployed URL are configured here.
+## Presentation
 
-A production project can later introduce Next.js API routes, Prisma/PostgreSQL,
-an admin panel, a complete 180-shade database, brand-approved guide rules, and an
-optional FastAPI rendering service. None is implemented. Adding server routes
-requires changing the static export deployment and deliberately defining privacy.
+React, TypeScript, Tailwind and custom CSS provide the responsive UI. Instrument
+Serif and Manrope are self-hosted through `next/font/local`, with their licenses
+included. `globals.css` defines the editorial theme and homepage; `studio.css`
+styles working controls; `camera.css`, `guide.css` and `consultation.css` style
+camera and consultation components. Mobile tabs preserve photo/profile state and
+stop hidden camera resources. Homepage shade links preselect the shared shade.
 
-Sources: [Next.js static export](https://nextjs.org/docs/app/guides/static-exports),
-[Google ImageSegmenter](https://developers.google.com/edge/mediapipe/solutions/vision/image_segmenter),
-[model provenance](../public/models/README.md).
+The original generated homepage portrait is an explicitly labelled editorial
+asset. It is not a demonstrated AI recolouring result. See `DESIGN_UPDATE.md` for
+asset provenance, the generation prompt and design verification.
+
+## Privacy and lifecycle
+
+Images, video frames, masks and inference remain in browser memory. Only the
+selected shade and profile fields reach the guide API. Object URLs, image
+bitmaps, workers, camera tracks and stale jobs are released on replacement,
+reset, mode changes or teardown as appropriate. No paid AI API is used.
+
+The local `.env` is ignored. Only non-secret public asset paths/debug settings
+use `NEXT_PUBLIC_`. Build hooks bundle workers and copy matching SDK/WASM assets;
+checksums verify both original model binaries.
+
+## Verification and production roadmap
+
+`npm run deploy:check` runs route type generation, TypeScript, zero-warning
+ESLint, 52 tests, the production build and asset verification. Native Chrome
+workflow checks use real portraits and a virtual webcam. They cover all three
+modes, cache reuse, comparison/download, resource cleanup, responsive layouts,
+photo-to-consultation handoff and actual PDF output.
+
+Remaining production work includes official measured shade data, database/admin
+publishing, approved formulation rules/limits, calibrated colour evaluation,
+physical-device and cross-browser QA, monitoring and operational controls. See
+`INTERVIEW_SUBMISSION.md` for the supplied PDF scope mapping.

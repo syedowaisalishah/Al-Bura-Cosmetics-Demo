@@ -81,9 +81,9 @@ Import the GitHub repository and deploy the current commit. If you previously
 selected Other or `out`, the repository configuration now explicitly sets
 Next.js and `.next`; confirm the Root Directory before redeploying. Serve
 the site at the domain root over HTTPS for camera permissions. The GitHub integration reported successful Vercel builds for feature commit
-`4f06c09` in both linked projects (`albura-ai`, `albura-ai-demo`). The production
-server and endpoints were tested locally; public-domain runtime checks still
-require the deployment URL. No Vercel credentials are stored in this workspace.
+`4f06c09` in both linked projects (`albura-ai`, `albura-ai-demo`). The public domain
+[albura-ai.vercel.app](https://albura-ai.vercel.app/) passed 24 browser checks
+covering the backend, photo consultation, mobile layout, PDF and virtual-webcam capture. No Vercel credentials are stored in this workspace.
 Choose hosting that permits the intended commercial/interview use.
 
 References: [Vercel framework settings](https://vercel.com/docs/builds/configure-a-build),
@@ -93,6 +93,7 @@ References: [Vercel framework settings](https://vercel.com/docs/builds/configure
 
 - [Interview walkthrough, scope review and test record](docs/INTERVIEW_SUBMISSION.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Editorial redesign and asset notes](docs/DESIGN_UPDATE.md)
 - [Photo edge correction](docs/EDGE_COVERAGE_FIX.md)
 - [Live colour correction](docs/LIVE_COLOUR_FIX.md)
 - [Earlier three-mode implementation](docs/LIVE_CAMERA_REPORT.md)
