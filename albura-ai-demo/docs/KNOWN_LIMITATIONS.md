@@ -15,7 +15,9 @@ This is a company demonstration, not a production-ready product.
   missed hair or unwanted regions. Strong agreement between the two existing models anchors recovery of
   connected strands with weaker corroborating hair evidence. A conservative
   skin exclusion protects the face. This can remove valid hair
-  near skin. No synthetic masks are used. Zero-mask pixels are copied exactly;
+  near skin. Still photos additionally recover bounded gaps supported by the
+  multiclass model and undo dilation-only exclusions on strong hair agreement;
+  direct skin exclusions remain intact. No synthetic masks are used. Zero-mask pixels are copied exactly;
   semantic errors inside a model-predicted mask are still possible.
 - **Camera capture:** Take Photo displays normal video; AI runs once on the
   captured still. Permission, HTTPS/localhost, a supported browser and

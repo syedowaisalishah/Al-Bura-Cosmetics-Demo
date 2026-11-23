@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { hexToRgb, labToRgb, rgbToLab } from "../src/lib/color/color-utils.ts";
-import { combineHairConfidence, refineHairMask, resizeConfidenceMask, skinExclusion } from "../src/lib/ai/mask-utils.ts";
+import { combineHairConfidence, combinePhotoHairConfidence, refineHairMask, resizeConfidenceMask, skinExclusion } from "../src/lib/ai/mask-utils.ts";
 import { prepareHairColor, recolorHair } from "../src/lib/ai/hair-recolor.ts";
 import { validatePhoto } from "../src/lib/ai/photo-utils.ts";
 import type { Shade } from "../src/types/shade.ts";
@@ -160,6 +160,54 @@ test("skin exclusion blocks strand recovery and cannot be crossed to reach uncer
   assert.ok(output[1] > .9); assert.equal(output[2], 0);
   assert.ok(output[3] < .6 && output[4] < .6, "Recovery cannot jump across protected skin");
   assert.throws(() => combineHairConfidence(primary, new Float32Array(1), new Uint8Array(5), 5, 1), /dimensions/);
+});
+
+test("photo recovery closes thin AI-confirmed highlight gaps without propagating through unsupported pixels", () => {
+  const width = 19, height = 13, primary = new Float32Array(width * height), guard = new Float32Array(primary.length), skin = new Float32Array(primary.length);
+  for (let y = 3; y <= 9; y++) for (let x = 4; x <= 14; x++) { primary[y * width + x] = .95; guard[y * width + x] = .9; }
+  // A highlighted strand is recognized strongly by multiclass, but rejected by hair-only.
+  for (let x = 6; x <= 12; x++) { primary[6 * width + x] = .02; guard[6 * width + x] = .84; }
+  // Unsupported background, a distant guard false-positive and a broad ambiguous patch.
+  primary[5 * width + 3] = .99; guard[5 * width + 3] = .02;
+  guard[0] = .99;
+  for (let y = 0; y <= 1; y++) for (let x = 7; x <= 11; x++) guard[y * width + x] = .8;
+  const originalPrimary = primary.slice(), originalGuard = guard.slice();
+  const result = combinePhotoHairConfidence(primary, guard, skin, width, height);
+  for (let x = 6; x <= 12; x++) assert.ok(result[6 * width + x] > .83);
+  assert.ok(result[5 * width + 3] < .03); assert.equal(result[0], 0);
+  for (let y = 0; y <= 1; y++) for (let x = 7; x <= 11; x++) assert.equal(result[y * width + x], 0);
+  assert.deepEqual(primary, originalPrimary); assert.deepEqual(guard, originalGuard);
+});
+
+test("photo recovery preserves native skin and releases only a strongly confirmed hair pixel in its dilation border", () => {
+  const width = 11, height = 9, primary = new Float32Array(width * height), guard = new Float32Array(primary.length), skin = new Float32Array(primary.length);
+  primary.fill(.95); guard.fill(.9);
+  const centre = 4 * width + 5; skin[centre] = .8;
+  skin[centre + 2] = .2; // Even strong hair evidence cannot override native skin.
+  const result = combinePhotoHairConfidence(primary, guard, skin, width, height);
+  assert.equal(result[centre], 0); assert.equal(result[centre + 2], 0);
+  assert.ok(result[centre - 1] > .9, "Skin dilation must not erase strongly confirmed adjacent hair");
+  const matte = refineHairMask({ width, height, categoryMask: new Uint8Array(primary.length), hairConfidenceMask: result, processingTimeMs: 0 }, width, height);
+  assert.equal(matte.alpha[centre], 0); assert.equal(matte.alpha[centre + 2], 0);
+});
+
+test("photo recovery uses an immutable seed mask, so high-confidence guard edges cannot grow repeatedly", () => {
+  const width = 15, height = 7, primary = new Float32Array(width * height), guard = new Float32Array(primary.length), skin = new Float32Array(primary.length);
+  for (let y = 2; y <= 4; y++) for (let x = 5; x <= 7; x++) { primary[y * width + x] = .95; guard[y * width + x] = .9; }
+  for (let x = 8; x <= 14; x++) guard[3 * width + x] = .9;
+  const result = combinePhotoHairConfidence(primary, guard, skin, width, height);
+  assert.ok(result[3 * width + 8] > .89);
+  for (let x = 9; x <= 14; x++) assert.equal(result[3 * width + x], 0);
+  assert.throws(() => combinePhotoHairConfidence(primary, guard.subarray(1), skin, width, height), /dimensions/);
+});
+
+test("photo gap recovery cannot look across a native skin barrier to find supporting hair", () => {
+  const width = 384, height = 9, primary = new Float32Array(width * height), guard = new Float32Array(primary.length), skin = new Float32Array(primary.length);
+  for (const x of [9, 15]) { primary[4 * width + x] = .95; guard[4 * width + x] = .9; }
+  const gap = 4 * width + 12; primary[gap] = .02; guard[gap] = .82;
+  assert.ok(combinePhotoHairConfidence(primary, guard, skin, width, height)[gap] > .81);
+  skin[4 * width + 10] = .8;
+  assert.ok(combinePhotoHairConfidence(primary, guard, skin, width, height)[gap] < .03);
 });
 
 test("reused colour buffers retain default photo maths without modifying original or excluded pixels", async () => {

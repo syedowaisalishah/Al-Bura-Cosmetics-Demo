@@ -75,6 +75,52 @@ export function combineHairConfidence(primary: Float32Array, confirmation: Float
   return result;
 }
 
+/** Still-photo detail recovery from model evidence, bounded by the original support.
+ * Multiclass hair confidence can resolve highlighted strands rejected by the
+ * hair-only model. Native skin remains a barrier; recovery never seeds itself.
+ */
+export function combinePhotoHairConfidence(primary: Float32Array, confirmation: Float32Array, skin: Float32Array, width: number, height: number) {
+  const excluded = skinExclusion(skin, width, height);
+  if (primary.length !== skin.length || confirmation.length !== skin.length) throw new Error("Hair evidence dimensions do not match.");
+  for (let i = 0; i < skin.length; i++) {
+    // Undo only the extra skin border, and only on strong two-model hair agreement.
+    // A pixel with its own skin evidence is never released by this exception.
+    if (skin[i] < .12 && Math.min(primary[i], confirmation[i]) >= .75) excluded[i] = 0;
+  }
+  const result = combineHairConfidence(primary, confirmation, excluded, width, height);
+  const support = new Uint8Array(result.length);
+  for (let i = 0; i < result.length; i++) support[i] = result[i] >= .75 ? 1 : 0;
+  const radius = Math.max(2, Math.min(6, Math.round(Math.max(width, height) / 128)));
+  const directions = [[1, 0], [0, 1], [1, 1], [1, -1]];
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const i = y * width + x, p = primary[i], c = confirmation[i];
+    if (excluded[i] || result[i] >= .85 || !Number.isFinite(p) || !Number.isFinite(c)) continue;
+    const guarded = c >= .75 && skin[i] < .06;
+    const paired = Math.min(p, c) >= .5 && Math.max(p, c) >= .65;
+    if (!guarded && !paired) continue;
+    let near = false;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx >= 0 && xx < width && yy >= 0 && yy < height && support[yy * width + xx]) near = true;
+    }
+    let enclosed = false;
+    if (guarded) for (const [dx, dy] of directions) {
+      let sides = 0;
+      for (const sign of [-1, 1]) for (let d = 1; d <= radius; d++) {
+        const xx = x + dx * d * sign, yy = y + dy * d * sign;
+        if (xx < 0 || xx >= width || yy < 0 || yy >= height) break;
+        const next = yy * width + xx;
+        if (excluded[next]) break;
+        if (support[next]) { sides++; break; }
+      }
+      if (sides === 2) { enclosed = true; break; }
+    }
+    if (guarded && (enclosed || c >= .85 && near)) result[i] = Math.max(result[i], c);
+    else if (paired && near) result[i] = Math.max(p, c);
+  }
+  return result;
+}
+
 /** Keep connected fine edges but discard tiny disconnected high-confidence specks. */
 function removeSmallRegions(alpha: Float32Array, width: number, height: number) {
   const visited = new Uint8Array(alpha.length), queue = new Int32Array(alpha.length);

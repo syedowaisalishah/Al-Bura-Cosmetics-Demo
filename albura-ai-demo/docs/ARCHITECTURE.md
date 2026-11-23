@@ -107,7 +107,10 @@ flowchart LR
   lifetime for VIDEO. Transferred ImageBitmaps close in `finally`.
 - `lib/ai/mask-utils.ts`: bilinear pixel-centre resizing, confidence threshold,
   connected tiny-region removal, bounded inward feathering, skin exclusion and
-  development overlay. No hand-painted mask or fixed head template is used.
+  development overlay. IMAGE evidence also recovers small multiclass-confirmed
+  gaps and dilation-only border losses from immutable support. Native skin
+  remains protected; VIDEO keeps the existing policy. See `EDGE_COVERAGE_FIX.md`.
+  No hand-painted mask or fixed head template is used.
 - `lib/ai/hair-recolor.ts`: cache active hair indices, compact Lab values,
   weighted mean and a bounded upper-tone histogram anchor once per photo.
   Shade changes visit those indices rather than converting the full image again.

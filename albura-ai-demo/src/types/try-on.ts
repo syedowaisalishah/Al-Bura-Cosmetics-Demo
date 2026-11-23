@@ -4,7 +4,7 @@ export interface HairSegmentationResult {
   height: number;
   /** Row-major class indices: 0 = background, 1 = hair. */
   categoryMask: Uint8Array;
-  /** Hair evidence in [0, 1]; strong agreement plus connected, supported strand recovery. */
+  /** Hair evidence in [0, 1]; connected recovery, plus bounded multiclass detail recovery for photos. */
   hairConfidenceMask: Float32Array;
   /** Internal multiclass skin exclusion; removed before the worker response. */
   skinConfidenceMask?: Float32Array;

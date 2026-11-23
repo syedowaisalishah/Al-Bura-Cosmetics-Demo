@@ -1,6 +1,6 @@
 import type { ImageSegmenter, ImageSegmenterResult } from "@mediapipe/tasks-vision";
 import { loadHairSegmenter } from "@/lib/ai/mediapipe";
-import { combineHairConfidence, HAIR_CATEGORY_INDEX, resizeConfidenceMask, skinExclusion } from "@/lib/ai/mask-utils";
+import { combineHairConfidence, combinePhotoHairConfidence, HAIR_CATEGORY_INDEX, resizeConfidenceMask, skinExclusion } from "@/lib/ai/mask-utils";
 import type { HairSegmentationResult } from "@/types/try-on";
 export type SegmentHair = (source: HTMLImageElement | HTMLCanvasElement | ImageBitmap) => Promise<HairSegmentationResult>;
 
@@ -54,7 +54,9 @@ export function segmentWithModels(model: ImageSegmenter, guard: ImageSegmenter, 
     : resizeConfidenceMask(confirmation.hairConfidenceMask, confirmation.width, confirmation.height, result.width, result.height);
   if (!confirmation.skinConfidenceMask) throw new Error("The safety model returned no skin confidence masks.");
   const skin = resizeConfidenceMask(confirmation.skinConfidenceMask, confirmation.width, confirmation.height, result.width, result.height);
-  result.hairConfidenceMask = combineHairConfidence(result.hairConfidenceMask, confidence, skinExclusion(skin, result.width, result.height), result.width, result.height);
+  result.hairConfidenceMask = timestampMs === undefined
+    ? combinePhotoHairConfidence(result.hairConfidenceMask, confidence, skin, result.width, result.height)
+    : combineHairConfidence(result.hairConfidenceMask, confidence, skinExclusion(skin, result.width, result.height), result.width, result.height);
   for (let i = 0; i < confidence.length; i++) result.categoryMask[i] = result.hairConfidenceMask[i] > 0.5 ? 1 : 0;
   result.processingTimeMs += confirmation.processingTimeMs;
   return result;
