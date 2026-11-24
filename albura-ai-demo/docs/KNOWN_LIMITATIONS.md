@@ -33,6 +33,8 @@ This is a company demonstration, not a production-ready product.
   reduce the painted cap appearance; bright shades will look subtler on dark
   hair. FPS is measured rather than guaranteed. The fixed
   512/256 model tensor sizes limit what input downscaling can improve.
+  The current scheduler also intentionally caps analyses at eight per second;
+  the camera's normal video frame rate is not the AI preview's measured FPS.
 - **Device coverage:** Automated Chrome checks used a virtual webcam with real
   portrait source frames and the real models. They do not certify physical
   webcam prompts, real phones, Safari or Firefox. Those remain device tests.
@@ -40,7 +42,10 @@ This is a company demonstration, not a production-ready product.
   processed side is 1024 px. A new photo requires a new IMAGE analysis. First
   loading downloads models/WASM and needs connectivity; there is no offline
   service worker. Processing time depends on the CPU and visible hair area.
-- **Guide approval:** Natural level/history/grey/length/density are manual inputs.
+- **Guide approval:** Starting level may be suggested from original photo hair
+  pixels, then requires confirmation or manual correction. It is an illustrative
+  depth estimate, not a calibrated measurement of natural roots. History,
+  grey/length/density remain manual inputs.
   Lift is a demonstration classification marked `demo_unapproved`. No developer
   strengths, chemical quantities, mixing ratios, bleach procedures or processing
   timers are supplied. Official technical-team and professional approval are
@@ -50,11 +55,12 @@ This is a company demonstration, not a production-ready product.
   user's device. Browser/device software can still have its own permissions or
   download behaviour. There is no cloud upload, authentication, admin panel,
   analytics service or production database.
-- **Deployment:** No Vercel credentials/project linkage are available here, so
-  deployment is prepared with exact README steps rather than claimed complete.
-  Vercel Hobby is limited to personal non-commercial use; confirm the demo's
-  eligibility. No paid plan, trial or infrastructure is enabled. The previous
-  Sites identity could not be accessed and is not the verified current demo.
+- **Deployment:** The existing demo is hosted at
+  [albura-ai.vercel.app](https://albura-ai.vercel.app/). Successful deployment and
+  browser-check records are dated evidence, not ongoing uptime monitoring or
+  physical-device certification. Full-stack `.next` output is required for its
+  backend; a static `out/` deployment would omit those handlers. No paid plan,
+  trial or inference service was added by this implementation.
 
 Before production: obtain approved shade/guide material; establish measurable
 accuracy targets using annotated images and accessory/skin/background checks;

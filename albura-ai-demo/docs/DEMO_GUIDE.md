@@ -1,5 +1,8 @@
 # Company demonstration guide
 
+For the explanation to practise aloud and the source reading order, use
+[INTERVIEW_GUIDE.md](INTERVIEW_GUIDE.md). This guide covers presentation steps.
+
 ## Prepare
 
 Start the verified local app or use a verified HTTPS deployment. Keep a clear,
@@ -16,13 +19,13 @@ physical camera has been tested merely because automated camera checks pass.
 
 | Time | Action and suggested explanation |
 | --- | --- |
-| 0:00–0:20 | Open the studio. “This is a local visual try-on and an educational guide. These twelve shades are illustrative and need Al Bura approval.” Point to the privacy notice and the two windows. |
+| 0:00–0:20 | Open the studio. “This is a private hair-colour preview with a connected consultation. These twelve shades are illustrative and need Al Bura approval.” Point to the privacy notice and the two windows. |
 | 0:20–0:50 | Upload the prepared portrait. Show the preparation/AI/colour status. “The existing models find hair on this device; the photo is not sent to an inference server.” |
 | 0:50–1:25 | Select Copper, Burgundy, then Ash Blonde. Use search or a family filter. “After the first analysis, colour changes reuse the hair mask. The preview preserves texture but does not predict the real dye result.” |
 | 1:25–1:45 | Drag the before/after slider; use Original, Compare and Colour preview. Download Result and open the PNG. Show that it contains the processed image. |
 | 1:45–2:15 | Select Take Photo → Open Camera. “This is normal video.” Capture Photo; point out the camera stops and the same still-photo AI workflow runs. Show Retake if time permits. Use Upload Photo if permission is denied. |
-| 2:15–2:45 | Look at Window 2; on mobile select Technical Guide. Change the natural level from 4 to 7. “This manual input changes the level difference and demo lift assessment. It does not rerun the photo analysis.” Show history/grey/length controls. |
-| 2:45–3:00 | Point to the approval notice and locked categories. “Official shade data, technical approval, broader device testing and production engineering are the next steps. No chemical formula is supplied.” |
+| 2:15–2:45 | Look at Window 2; on mobile select Colour consultation. Show the connected photo and confirm or correct its starting estimate. “The original hair pixels suggest a starting depth. Changing this level or profile updates the consultation without rerunning hair detection.” Show the service status, then save the summary or print. |
+| 2:45–3:00 | Explain the approval notice. “Official shade data, technical approval, broader device testing and production administration are the next steps. No chemical formula is supplied.” |
 
 ## Feature walkthrough
 
@@ -49,10 +52,12 @@ physical camera has been tested merely because automated camera checks pass.
 6. **Save:** Download Result is enabled only when the selected shade is ready.
    It saves a processed PNG. Changing shades always starts from the original
    cached pixels, so repeated selections do not accumulate colour.
-7. **Review:** Set natural level 1–10, history, grey percentage, length and density
-   manually. Target level/reflection come from the chosen sample shade. The
-   guide calculates a demonstration level difference/classification only. Print
-   demo guide prints the assessment and safety notices without the portrait.
+7. **Review:** Confirm or correct the photo-derived starting level, then change
+   history, grey percentage, length and density. Target level/reflection come
+   from the chosen sample shade. The guide API validates profile metadata and
+   returns the level comparison and notes; a labelled local preview handles service
+   failure. Save summary downloads JSON. Print / Save PDF prints the consultation
+   without the portrait. Both exports require starting-level confirmation.
 
 ## Implemented
 
@@ -62,7 +67,9 @@ and fallback;
 conservative confidence/skin mask, inward edge feathering; texture-preserving
 CIELAB recolouring; twelve validated illustrative shades; search/family filters;
 shared selection; comparison; PNG download; reset/retake/errors; responsive studio
-tabs; manual educational guide, references, approval locks and print view.
+tabs; original-photo starting estimate and confirmation; backend-checked consultation,
+references, JSON summary and print view. Source responsibilities are separated into
+`web`, `api` and `shared`, with thin Next.js routing entries in `app`.
 
 ## Planned for production
 
@@ -70,5 +77,6 @@ Official approved shade/Lab data and technical rules; annotated image evaluation
 across diverse hair, skin, lighting, accessories and backgrounds; physical mobile
 and desktop camera testing; Safari/Firefox validation; accessibility/performance
 review; operational hosting, product security/privacy review and brand sign-off.
-Any future accounts, database/admin or server processing require a separate brief.
-Do not present those as existing features or unlock treatment formulas by default.
+Accounts, database/admin and approved formulation rules remain part of the full
+production delivery. Optional server image inference requires its own privacy,
+model-quality and hosting decisions. Do not present these as existing features.

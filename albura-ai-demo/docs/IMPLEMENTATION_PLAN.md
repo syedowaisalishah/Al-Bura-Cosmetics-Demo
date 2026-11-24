@@ -1,5 +1,8 @@
 # Delivery boundaries
 
+Historical delivery plan. Use the [documentation index](README.md) and
+[interview guide](INTERVIEW_GUIDE.md) for the current implementation and architecture.
+
 Phases 1–5 are implemented locally. See `PHASE_5_REPORT.md` for the final audit
 and checks. `CAMERA_CAPTURE_REPORT.md` describes the capture workflow and
 `PHASE_3_REPORT.md` describes the guide. `PHASE_2_REPORT.md` preserves photo-pipeline

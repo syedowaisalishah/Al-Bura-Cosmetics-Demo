@@ -6,6 +6,9 @@ preset and `.next` output. Node 22 is used for development/build and API routes.
 The original static-export implementation has been replaced; historical phase
 reports describe that earlier state.
 
+For an interview explanation and source reading order, start with
+[INTERVIEW_GUIDE.md](INTERVIEW_GUIDE.md). This document describes the technical flow.
+
 ## Source organization
 
 `src/web` owns the screens, React UI, styles, browser camera and AI workers.
@@ -32,12 +35,13 @@ flowchart TD
     Estimate --> Context[React Context: shade, level, profile and confirmation]
     Context --> Render
     Context --> Guide[Window 2 consultation]
+    Context --> GuideClient[useGuideAssessment hook]
     Camera[getUserMedia] --> Capture
     Camera --> Live[Separate VIDEO worker, one frame in flight]
     Live --> LiveResult[Smoothed experimental preview and measured FPS]
     Context --> Live
   end
-  Context -->|Profile metadata only| API[POST /api/guide/calc/]
+  GuideClient -->|Profile metadata only| API[POST /api/guide/calc/]
   JSON[Versioned demo shade JSON] --> API
   API -->|Validated assessment| Guide
 ```
@@ -61,9 +65,11 @@ flowchart TD
 - `photo-analysis.ts` estimates starting depth from the original hair pixels using
   an illustrative scale. Lighting and existing colour affect this approximation;
   the user confirms or overrides it before consultation export.
-- `TryOnProvider.tsx` shares the shade and hair profile. Guide changes do not rerun
-  segmentation. The API assessment is debounced, stale requests are cancelled and
-  a clearly labelled local assessment remains available if the API fails.
+- `TryOnProvider.tsx` shares the shade, hair profile, photo estimate and confirmation.
+  `useGuideAssessment.ts` owns consultation HTTP requests, a 120 ms debounce,
+  cancellation and the labelled local fallback. Guide changes do not rerun segmentation.
+  `GuideRequest` in shared types describes the metadata-only request; the backend's
+  Zod schema checks actual incoming values.
 
 ## Server and data
 
@@ -77,6 +83,20 @@ The assessment endpoint accepts bounded JSON profile metadata. It rejects
 unknown fields and invalid levels/options. It does not accept images or output
 chemical formulas. Responses are not cached. The demo catalogue is validated
 from `src/shared/data/demo-shades.json`; no database or administration service is claimed.
+
+The request path is `app/api/guide/calc/route.ts` → `api/handlers/guide.ts` →
+`api/services/guide-service.ts`. The handler handles HTTP/JSON, the schema validates
+the profile, and the service resolves its own shade before invoking shared rules.
+The studio's initial catalogue is passed directly from its server page to React;
+it does not make an HTTP request to its own catalogue endpoint.
+
+These source folders form one modular application, not separately deployed
+microservices. `web/` contains server-rendered page composition as well as client
+components; camera, pixel access and inference execute only in the browser.
+The shared rule functions are used by the service and browser fallback. Consultation
+is deterministic; MediaPipe is the AI segmentation stage. See the
+[structure decisions](PROJECT_STRUCTURE.md#why-keep-the-current-stack) for future
+NestJS/Python options.
 
 ## Presentation
 
@@ -109,6 +129,14 @@ ESLint, 52 tests, the production build and asset verification. Native Chrome
 workflow checks use real portraits and a virtual webcam. They cover all three
 modes, cache reuse, comparison/download, resource cleanup, responsive layouts,
 photo-to-consultation handoff and actual PDF output.
+
+On **24 November 2026**, the readability/hook refactor passed that full command
+and **16 focused production-browser checks**: real IMAGE processing, cached shade
+changes, shared state, confirmation, metadata-only requests, stale-request cancellation,
+API failure/recovery, comparison, actual PNG download, mobile state and camera release.
+The focused test used the app's labelled editorial image as a functional fixture
+and a virtual camera; it does not measure segmentation accuracy or certify hardware.
+The earlier broader mode/PDF check record is preserved in the dated submission reports.
 
 Remaining production work includes official measured shade data, database/admin
 publishing, approved formulation rules/limits, calibrated colour evaluation,

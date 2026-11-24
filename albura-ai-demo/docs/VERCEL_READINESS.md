@@ -25,10 +25,11 @@ unapproved assessment rules. There is no database, authentication/admin, image
 upload endpoint or paid inference service. It must not be presented as the full
 production system from the supplied 57-person-day scope.
 
-The GitHub integration reported successful Vercel deployment checks for feature
-commit `4f06c09` in both linked projects: `albura-ai` and `albura-ai-demo`.
-Their public-domain endpoints have not been smoke-tested because the public
-URL was not supplied. No Vercel credentials are stored here. The tested local
-production preview uses port 3002.
+The GitHub integration reported successful Vercel deployment checks for structure
+commit `fb5f05b` in both linked projects: `albura-ai` and `albura-ai-demo` on
+23 November 2026. The public demo at https://albura-ai.vercel.app/ subsequently
+passed 24 consultation/API/capture browser checks, including metadata-only requests
+and virtual-webcam capture. Those are dated results; verify each new deployment
+before presenting it. No Vercel credentials are stored in the repository.
 
 Reference: [Vercel build configuration](https://vercel.com/docs/builds/configure-a-build).

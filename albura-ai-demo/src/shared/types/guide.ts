@@ -15,6 +15,14 @@ export interface GuideInput {
   hairDensity: HairDensity;
 }
 
+/** User-provided details, shared by the consultation UI and backend. */
+export type HairProfile = Omit<GuideInput, "selectedShade">;
+
+/** Only metadata crosses HTTP. The server looks up the shade from its own catalogue. */
+export interface GuideRequest extends HairProfile {
+  shadeId: string;
+}
+
 export type GuideClassification =
   | "Professional consultation required"
   | "Deposit/darken assessment"

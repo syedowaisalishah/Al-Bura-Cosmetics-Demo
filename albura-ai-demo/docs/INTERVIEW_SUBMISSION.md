@@ -1,5 +1,9 @@
 # Al Bura interview submission — 23 November 2026
 
+This is the dated scope/submission record. For the current explanation and code
+reading order, use [INTERVIEW_GUIDE.md](INTERVIEW_GUIDE.md) and the
+[documentation index](README.md).
+
 ## What Window 2 does
 
 Window 1 answers **“What would this shade look like on my hair?”** Window 2

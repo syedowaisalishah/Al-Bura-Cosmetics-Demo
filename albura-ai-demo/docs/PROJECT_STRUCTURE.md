@@ -4,6 +4,10 @@ The current application is one full-stack Next.js project. Frontend and backend
 code have separate source folders; both are built and deployed together. React
 is the UI library used by Next.js, not a second frontend application.
 
+For a shorter explanation you can practise aloud, use
+[INTERVIEW_GUIDE.md](INTERVIEW_GUIDE.md). Start a code review there, then use this
+tree to locate the implementation.
+
 ```text
 Al-Bura-Cosmetics-Demo/
 ├── albura-ai-demo/               # Existing Vercel project root
@@ -22,6 +26,7 @@ Al-Bura-Cosmetics-Demo/
 │   │   │   ├── components/       # Layout, try-on, guide and UI components
 │   │   │   ├── styles/           # Global, studio, camera and guide CSS
 │   │   │   ├── ai/               # MediaPipe clients/workers and recolouring
+│   │   │   ├── hooks/            # Consultation HTTP requests and local fallback
 │   │   │   ├── lib/              # Camera, colour maths and UI helpers
 │   │   │   ├── types/            # Browser/worker contracts
 │   │   │   └── layout.tsx        # Document shell and local font setup
@@ -60,6 +65,12 @@ implementation in `src/api`. Likewise, Next.js page/layout entries delegate to
   at that boundary and pass data to the UI.
 - Use `@/web`, `@/api` and `@/shared` for cross-folder imports. ESLint guards the
   direction of those imports.
+
+Within `web`, `TryOnProvider` owns state and `useGuideAssessment` owns network
+coordination. Photo pixels/masks stay in the photo pipeline, not global profile
+state. Within `api`, handlers own HTTP, schemas validate values, and services run
+trusted business operations. `HairProfile` and `GuideRequest` in shared types
+describe the input contract without importing backend implementation into the UI.
 
 ## Why keep the current stack?
 
@@ -106,6 +117,11 @@ Historical PDFs and phase reports describe their recorded source commits. Their
 old paths are not current folder instructions; use this file for navigation.
 
 ## Refactor verification
+
+The 24 November state/network separation passed the full deployment check with
+52 unit tests and 16 focused production-browser checks. See
+[ARCHITECTURE.md](ARCHITECTURE.md#verification-and-production-roadmap) for that
+run's scope. The original 23 November folder move was verified as follows:
 
 - TypeScript, zero-warning ESLint, all 52 unit tests and production/deployment
   verification passed with the new paths.

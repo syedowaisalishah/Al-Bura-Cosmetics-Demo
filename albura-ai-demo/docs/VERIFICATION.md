@@ -1,8 +1,8 @@
 # Phase 1 verification
 
 Historical Phase 1 snapshot, verified **2026-11-22**, Asia/Karachi.
-Phase 2 is now implemented; see [PHASE_2_REPORT.md](PHASE_2_REPORT.md) for current
-behaviour and verification. Statements below describe the earlier Phase 1 state.
+For current behaviour, use the [documentation index](README.md). Statements
+below describe the earlier Phase 1 state, including its static deployment.
 
 ## Installed environment and technologies
 
